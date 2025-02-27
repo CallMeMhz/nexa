@@ -1,0 +1,5 @@
+
+subscription:
+  - name: Distractify
+    link: https://www.distractify.com/rss
+    tags: ["entertainment", "news"]
