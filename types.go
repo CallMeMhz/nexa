@@ -15,6 +15,8 @@ type Feed struct {
 
 	Cron      string `yaml:"cron" json:"cron"`
 	Suspended bool   `yaml:"suspended" json:"suspended"`
+
+	// Items []*Item `gorm:"foreignKey:FeedID" json:"items"`
 }
 
 func (feed *Feed) TableName() string { return "feeds" }
@@ -26,7 +28,7 @@ type ListFeedResult struct {
 
 type Item struct {
 	ID        string `gorm:"primaryKey" json:"id"`
-	FeedID    string `gorm:"uniqueIndex:idx_guid" json:"feed_id"`
+	FeedID    string `json:"feed_id"`
 	CreatedAt time.Time
 
 	Title       string     `json:"title"`
@@ -34,15 +36,17 @@ type Item struct {
 	Description string     `json:"description"`
 	Image       string     `json:"image"` // TODO: archive image to local disk
 	Link        string     `json:"link"`
-	GUID        string     `gorm:"uniqueIndex:idx_guid" json:"guid"`
+	GUID        string     `json:"guid"`
 	PubDate     *time.Time `json:"pub_date,omitempty"`
 
 	// fields below should store within user info,
 	// but for now, there is only one user in the system.
-	Read bool   `json:"read"`
-	Star bool   `json:"star"`
-	Like bool   `json:"like"`
-	Tags string `json:"tags"`
+	Read    bool   `json:"read"`
+	Starred bool   `json:"starred"`
+	Liked   bool   `json:"liked"`
+	Tags    string `json:"tags"`
+
+	// Feed *Feed `gorm:"references:ID" json:"feed"`
 }
 
 func (item *Item) TableName() string { return "items" }

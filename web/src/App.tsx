@@ -1,90 +1,63 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import FeedList from './components/FeedList';
 import ItemList from './components/ItemList';
 import ItemContent from './components/ItemContent';
 import AddFeedModal from './components/AddFeedModal';
-import { Feed, Item } from './types';
+import DeleteFeedModal from './components/DeleteFeedModal';
+import { Feed } from './types';
+import { useFeedManager } from './hooks/useFeedManager';
 
 function App() {
-  const [feeds, setFeeds] = useState<Feed[]>([]);
-  const [items, setItems] = useState<Item[]>([]);
-  const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const {
+    feeds,
+    items,
+    selectedFeed,
+    selectedItem,
+    isLoading,
+    setSelectedFeed,
+    setSelectedItem,
+    fetchItems,
+    addFeed,
+    deleteFeed,
+    updateItemStatus,
+    fetchItemContent
+  } = useFeedManager();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [feedToDelete, setFeedToDelete] = useState<Feed | null>(null);
 
-  useEffect(() => {
-    fetchFeeds();
-    fetchItems();
-  }, []);
-
-  useEffect(() => {
-    setItems([]);
-    fetchItems(selectedFeed?.id);
-  }, [selectedFeed]);
-
-  const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:7766';
-
-  const fetchFeeds = async () => {
-    const response = await fetch(`${API_URL}/feeds`);
-    const data = await response.json();
-    setFeeds(data.feeds);
+  // 处理删除按钮点击
+  const handleDeleteClick = (feed: Feed) => {
+    setFeedToDelete(feed);
+    setIsDeleteModalOpen(true);
   };
 
-  const addFeed = async (url: string, cron: string, desc?: string) => {
-    const response = await fetch(`${API_URL}/feed`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url, cron, desc }),
-    });
-    const data = await response.json();
-    setFeeds([...feeds, data.feed]);
+  // 处理添加 feed
+  const handleAddFeed = async (url: string, cron: string, desc?: string) => {
+    await addFeed(url, cron, desc);
     setIsAddModalOpen(false);
   };
 
-  const fetchItems = async (feed_id?: string) => {
-    const url = feed_id 
-      ? `${API_URL}/feed/${feed_id}`
-      : `${API_URL}/feed/all`;
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    // 只处理read状态，摘要由后端提供
-    const processedItems = data.items.map((item: Item) => ({
-      ...item,
-      read: item.read !== undefined ? item.read : false,
-      // 确保summary字段存在，即使是空字符串
-      description: item.description || ""
-    }));
-    
-    setItems(processedItems);
+  // 处理删除 feed 确认
+  const handleDeleteFeed = async (feedId: string) => {
+    await deleteFeed(feedId);
+    setIsDeleteModalOpen(false);
   };
 
-  const handleSelectItem = (item: Item) => {
-    // Mark the item as read
-    const updatedItems = items.map(i => 
-      i.guid === item.guid ? { ...i, read: true } : i
-    );
-    setItems(updatedItems);
-    setSelectedItem(item);
-    
-    // Update the read status on the server
-    updateItemReadStatus(item.id, false);
+  // 处理标记已读/未读
+  const handleToggleRead = (item: any, read: boolean) => {
+    updateItemStatus(item, 'read', read);
   };
   
-  const updateItemReadStatus = async (itemId: string, unread: boolean) => {
-    try {
-      await fetch(`${API_URL}/item/${itemId}/read`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ read: !unread }),
-      });
-    } catch (error) {
-      console.error('Failed to update read status:', error);
-    }
+  // 处理标记星标
+  const handleToggleStar = (item: any, starred: boolean) => {
+    updateItemStatus(item, 'starred', starred);
+  };
+  
+  // 处理标记喜欢
+  const handleToggleLike = (item: any, liked: boolean) => {
+    updateItemStatus(item, 'liked', liked);
   };
 
   return (
@@ -97,15 +70,38 @@ function App() {
       />
       <ItemList 
         items={items}
-        selectedFeed={selectedFeed}
+        feed={selectedFeed}
         selectedItem={selectedItem}
-        onSelectItem={handleSelectItem}
+        onSelectItem={(item) => {
+          // 先设置选中的 item
+          setSelectedItem(item);
+          
+          // 只有当 item 没有内容时才请求
+          if (!item.content) {
+            fetchItemContent(item.id);
+          }
+        }}
+        onRefresh={(feed_id, unread, refresh) => fetchItems({feed_id, unread, refresh})}
+        isLoading={isLoading}
+        onDeleteClick={handleDeleteClick}
+        feeds={feeds}
       />
-      <ItemContent item={selectedItem} />
+      <ItemContent 
+        item={selectedItem} 
+        onToggleRead={handleToggleRead}
+        onToggleStar={handleToggleStar}
+        onToggleLike={handleToggleLike}
+      />
       <AddFeedModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSubmit={addFeed}
+        onSubmit={handleAddFeed}
+      />
+      <DeleteFeedModal
+        isOpen={isDeleteModalOpen}
+        feed={feedToDelete}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteFeed}
       />
     </div>
   );

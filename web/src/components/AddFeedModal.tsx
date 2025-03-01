@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface Props {
   isOpen: boolean;
@@ -7,10 +7,18 @@ interface Props {
 }
 
 const AddFeedModal = ({ isOpen, onClose, onSubmit }: Props) => {
+  const defaultCron = '@every 30m';
   const [url, setUrl] = useState('');
-  const [cron, setCron] = useState('*/30 * * * *');
+  const [cron, setCron] = useState(defaultCron);
   const [desc, setDesc] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const urlInputRef = useRef<HTMLInputElement>(null);
+  
+  useEffect(() => {
+    if (isOpen && urlInputRef.current) {
+      urlInputRef.current.focus();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -20,7 +28,7 @@ const AddFeedModal = ({ isOpen, onClose, onSubmit }: Props) => {
     try {
       await onSubmit(url, cron, desc || undefined);
       setUrl('');
-      setCron('');
+      setCron(defaultCron);
       setDesc('');
       onClose();
     } catch (error) {
@@ -43,6 +51,7 @@ const AddFeedModal = ({ isOpen, onClose, onSubmit }: Props) => {
               onChange={(e) => setUrl(e.target.value)}
               className="w-full p-2 border rounded"
               required
+              ref={urlInputRef}
             />
           </div>
           <div className="mb-4">
@@ -61,7 +70,7 @@ const AddFeedModal = ({ isOpen, onClose, onSubmit }: Props) => {
               value={cron}
               onChange={(e) => setCron(e.target.value)}
               className="w-full p-2 border rounded"
-              placeholder="*/30 * * * *"
+              placeholder="@every 30m"
               required
             />
           </div>

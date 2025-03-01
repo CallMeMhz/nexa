@@ -48,5 +48,5 @@ export const formatTimestamp = (date: Date): string => {
  */
 export const getFeedDisplayName = (feed: any): string => {
   if (!feed) return 'All Items';
-  return feed.name || feed.title || getDomain(feed.link) || 'Unnamed Feed';
+  return feed.title || getDomain(feed.link) || 'Unnamed Feed';
 }; 

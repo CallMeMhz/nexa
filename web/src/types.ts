@@ -10,6 +10,7 @@ export interface Feed {
 
 export interface Item {
   id: string;
+  feed_id: string;
   title: string;
   content: string;
   description: string;
@@ -18,6 +19,6 @@ export interface Item {
   pub_date?: string;
   image: string;
   read: boolean;
-  star: boolean;
-  like: boolean;
+  starred: boolean;
+  liked: boolean;
 }
