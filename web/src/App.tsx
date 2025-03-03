@@ -11,12 +11,14 @@ function App() {
   const {
     feeds,
     items,
+    pagination,
     selectedFeed,
     selectedItem,
     isLoading,
     setSelectedFeed,
     setSelectedItem,
     fetchItems,
+    loadMoreItems,
     addFeed,
     deleteFeed,
     updateItemStatus,
@@ -76,6 +78,8 @@ function App() {
         isLoading={isLoading}
         onDeleteClick={handleDeleteClick}
         feeds={feeds}
+        pagination={pagination}
+        onLoadMore={loadMoreItems}
       />
       <ItemContent 
         item={selectedItem} 

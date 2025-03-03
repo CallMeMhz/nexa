@@ -151,6 +151,25 @@ func (svc *Service) listItems(c *gin.Context, feeds ...*Feed) {
 		FeedIDs: lo.Map(feeds, func(feed *Feed, _ int) string { return feed.ID }),
 	}
 
+	// 处理分页参数
+	if pageStr := c.Query("page"); pageStr != "" {
+		if page, err := parseInt(pageStr, 1); err == nil {
+			if page < 1 {
+				page = 1
+			}
+			if sizeStr := c.Query("size"); sizeStr != "" {
+				if size, err := parseInt(sizeStr, 10); err == nil {
+					if size < 1 {
+						size = 10
+					}
+					offset := (page - 1) * size
+					filter.Limit = &size
+					filter.Offset = &offset
+				}
+			}
+		}
+	}
+
 	if unread := c.Query("unread") == "true"; unread {
 		filter.Unread = &unread
 	}
@@ -165,13 +184,29 @@ func (svc *Service) listItems(c *gin.Context, feeds ...*Feed) {
 		todayTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).UTC()
 		filter.PubDate = &todayTime
 	}
+
+	// 获取总数
+	total, err := svc.db.CountItems(ctx, filter)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 获取分页数据
 	items, err := svc.db.FilterItems(ctx, filter)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(200, gin.H{"items": items})
+	c.JSON(200, gin.H{
+		"items": items,
+		"pagination": gin.H{
+			"total": total,
+			"page":  getPageFromOffset(filter.Offset, filter.Limit),
+			"size":  getPageSize(filter.Limit),
+		},
+	})
 }
 
 func (svc *Service) GetItem(c *gin.Context) {

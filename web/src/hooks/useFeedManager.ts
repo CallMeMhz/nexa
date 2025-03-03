@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Feed, Item } from '../types';
+import { Feed, Item, Pagination } from '../types';
 import * as apiService from '../utils/apiService';
 
 export const useFeedManager = () => {
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [items, setItems] = useState<Item[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, size: 10 });
   const [selectedFeed, setSelectedFeed] = useState<Feed>({id: "all", title: "All"} as Feed);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,12 +30,15 @@ export const useFeedManager = () => {
     starred?: boolean,
     liked?: boolean,
     today?: boolean,
-    refresh?: boolean
+    refresh?: boolean,
+    page?: number,
+    size?: number
   }) => {
     setIsLoading(true);
     try {
-      const fetchedItems = await apiService.fetchItems(params);
-      setItems(fetchedItems);
+      const response = await apiService.fetchItems(params);
+      setItems(response.items);
+      setPagination(response.pagination);
     } catch (error) {
       console.error('Failed to fetch items:', error);
     } finally {
@@ -108,6 +112,40 @@ export const useFeedManager = () => {
     }
   }, [items, selectedItem, feeds, selectedFeed, fetchItems]);
 
+  // 加载更多项目，用于分页
+  const loadMoreItems = useCallback(async () => {
+    if (isLoading || pagination.page * pagination.size >= pagination.total) {
+      return;
+    }
+    
+    const nextPage = pagination.page + 1;
+    const unread = selectedFeed.id === "unread" ? true : undefined;
+    const starred = selectedFeed.id === "starred" ? true : undefined;
+    const liked = selectedFeed.id === "liked" ? true : undefined;
+    const today = selectedFeed.id === "today" ? true : undefined;
+    
+    setIsLoading(true);
+    try {
+      const response = await apiService.fetchItems({
+        feed_id: selectedFeed.id, 
+        unread, 
+        starred, 
+        liked, 
+        today,
+        page: nextPage,
+        size: pagination.size
+      });
+      
+      // 合并项目
+      setItems(prevItems => [...prevItems, ...response.items]);
+      setPagination(response.pagination);
+    } catch (error) {
+      console.error('Failed to load more items:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isLoading, pagination, selectedFeed, setItems]);
+
   // 当组件挂载时获取 feeds
   useEffect(() => {
     fetchFeeds();
@@ -116,16 +154,18 @@ export const useFeedManager = () => {
   // 当选中的 feed 变化时获取对应的 items
   useEffect(() => {
     setItems([]);
+    setPagination({ total: 0, page: 1, size: 10 });
     const unread = selectedFeed.id === "unread" ? true : undefined;
     const starred = selectedFeed.id === "starred" ? true : undefined;
     const liked = selectedFeed.id === "liked" ? true : undefined;
     const today = selectedFeed.id === "today" ? true : undefined;
-    fetchItems({feed_id: selectedFeed.id, unread, starred, liked, today});
+    fetchItems({feed_id: selectedFeed.id, unread, starred, liked, today, page: 1, size: 10});
   }, [selectedFeed, fetchItems]);
 
   return {
     feeds,
     items,
+    pagination,
     selectedFeed,
     selectedItem,
     isLoading,
@@ -133,6 +173,7 @@ export const useFeedManager = () => {
     setSelectedItem,
     fetchFeeds,
     fetchItems,
+    loadMoreItems,
     addFeed,
     deleteFeed,
     updateItemStatus

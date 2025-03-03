@@ -76,10 +76,46 @@ func (s *SQLiteDB) FilterItems(ctx context.Context, filter *ItemFilter) ([]*Item
 	} else {
 		query = query.Order("pub_date desc")
 	}
+
+	// 应用分页参数
+	if filter.Limit != nil {
+		query = query.Limit(*filter.Limit)
+	}
+	if filter.Offset != nil {
+		query = query.Offset(*filter.Offset)
+	}
+
 	if err := query.Find(&items).Error; err != nil {
 		return nil, err
 	}
 	return items, nil
+}
+
+// 添加一个新方法来获取总数
+func (s *SQLiteDB) CountItems(ctx context.Context, filter *ItemFilter) (int64, error) {
+	var count int64
+	query := s.db.WithContext(ctx).Model(&Item{})
+
+	if len(filter.FeedIDs) > 0 {
+		query = query.Where("feed_id in ?", filter.FeedIDs)
+	}
+	if filter.Unread != nil {
+		query = query.Where("read = ?", !*filter.Unread)
+	}
+	if filter.PubDate != nil {
+		query = query.Where("pub_date >= ?", *filter.PubDate)
+	}
+	if filter.Starred != nil {
+		query = query.Where("starred = ?", *filter.Starred)
+	}
+	if filter.Liked != nil {
+		query = query.Where("liked = ?", *filter.Liked)
+	}
+
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (s *SQLiteDB) AddItem(ctx context.Context, items ...*Item) error {

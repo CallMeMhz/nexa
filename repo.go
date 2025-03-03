@@ -13,6 +13,8 @@ type ItemFilter struct {
 	Starred *bool
 	Liked   *bool
 	SortBy  *string
+	Limit   *int // 每页数量
+	Offset  *int // 偏移量，用于分页
 }
 
 type DB interface {
@@ -23,6 +25,7 @@ type DB interface {
 
 	AddItem(ctx context.Context, items ...*Item) error
 	FilterItems(ctx context.Context, filter *ItemFilter) ([]*Item, error)
+	CountItems(ctx context.Context, filter *ItemFilter) (int64, error)
 	GetItem(ctx context.Context, itemID string) (*Item, error)
 	UpdateItem(ctx context.Context, itemID string, read, star, like *bool) error
 	SaveItem(ctx context.Context, item *Item) error

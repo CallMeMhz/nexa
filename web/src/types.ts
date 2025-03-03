@@ -22,3 +22,14 @@ export interface Item {
   starred: boolean;
   liked: boolean;
 }
+
+export interface Pagination {
+  total: number;
+  page: number;
+  size: number;
+}
+
+export interface ItemsResponse {
+  items: Item[];
+  pagination: Pagination;
+}

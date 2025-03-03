@@ -1,6 +1,6 @@
-import { Feed, Item } from '../types';
+import { Feed, Item, Pagination } from '../types';
 import { getFaviconUrl, getFeedDisplayName, formatTimestamp, getDomain } from '../utils/feedUtils';
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface Props {
   items: Item[];
@@ -11,11 +11,45 @@ interface Props {
   isLoading: boolean;
   onDeleteClick?: (feed: Feed) => void;
   feeds: Feed[];
+  pagination: Pagination;
+  onLoadMore: () => void;
 }
 
-const ItemList = ({ items, feed, selectedItem, onSelectItem, onRefresh, isLoading, onDeleteClick, feeds }: Props) => {
+const ItemList = ({ 
+  items, 
+  feed, 
+  selectedItem, 
+  onSelectItem, 
+  onRefresh, 
+  isLoading, 
+  onDeleteClick, 
+  feeds,
+  pagination,
+  onLoadMore
+}: Props) => {
   const filteredItems = items;  // TODO: implement feed filtering
   const [isHeaderHovered, setIsHeaderHovered] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // 处理滚动事件，实现无限滚动
+  const handleScroll = useCallback(() => {
+    if (!listRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+    // 当滚动到距离底部100px时触发加载更多
+    if (scrollHeight - scrollTop - clientHeight < 100 && !isLoading && pagination.page * pagination.size < pagination.total) {
+      onLoadMore();
+    }
+  }, [isLoading, onLoadMore, pagination]);
+
+  // 监听滚动事件
+  useEffect(() => {
+    const listElement = listRef.current;
+    if (listElement) {
+      listElement.addEventListener('scroll', handleScroll);
+      return () => listElement.removeEventListener('scroll', handleScroll);
+    }
+  }, [handleScroll]);
 
   // 根据 feed_id 获取对应的 feed 的 favicon URL
   const getFeedFaviconUrl = (feedId: string): string => {
@@ -31,7 +65,7 @@ const ItemList = ({ items, feed, selectedItem, onSelectItem, onRefresh, isLoadin
   const isSystemFeed = feed && feed.id && ["all", "unread", "starred", "liked", "today"].includes(feed.id);
 
   return (
-    <div className="w-96 bg-white border-r border-gray-200 overflow-y-auto">
+    <div ref={listRef} className="w-96 bg-white border-r border-gray-200 overflow-y-auto">
       <div className="p-4">
         {/* 标题栏 - 显示当前源信息 */}
         <div 
@@ -56,6 +90,9 @@ const ItemList = ({ items, feed, selectedItem, onSelectItem, onRefresh, isLoadin
                 {feed.desc}
               </div>
             )}
+            <div className="text-xs text-gray-600 mt-1">
+              共 {pagination.total} 条
+            </div>
           </h2>
           
           {/* 操作按钮区域 */}
@@ -84,10 +121,6 @@ const ItemList = ({ items, feed, selectedItem, onSelectItem, onRefresh, isLoadin
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
-            
-            <span className="text-xs text-gray-500">
-              {filteredItems.length} items
-            </span>
           </div>
         </div>
 
@@ -152,6 +185,20 @@ const ItemList = ({ items, feed, selectedItem, onSelectItem, onRefresh, isLoadin
               </div>
             </div>
           ))}
+          
+          {/* 加载状态指示器 */}
+          {isLoading && (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+            </div>
+          )}
+          
+          {/* 加载完成提示 */}
+          {!isLoading && pagination.page * pagination.size >= pagination.total && items.length > 0 && (
+            <div className="text-center text-gray-500 py-4">
+              已加载全部内容
+            </div>
+          )}
         </div>
       </div>
     </div>
