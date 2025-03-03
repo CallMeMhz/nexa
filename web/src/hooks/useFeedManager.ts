@@ -108,46 +108,6 @@ export const useFeedManager = () => {
     }
   }, [items, selectedItem, feeds, selectedFeed, fetchItems]);
 
-  // 获取 item 内容
-  const fetchItemContent = useCallback(async (itemId: string) => {
-    try {
-      // 检查当前选中的 item 是否已经有内容
-      if (selectedItem && selectedItem.id === itemId && selectedItem.content) {
-        // 如果已经有内容，直接返回当前 item，不再请求
-        return selectedItem;
-      }
-      
-      // 检查 items 列表中是否已经有内容
-      const existingItem = items.find(item => item.id === itemId);
-      if (existingItem && existingItem.content) {
-        // 如果列表中的 item 已经有内容，直接使用它
-        if (selectedItem && selectedItem.id === itemId) {
-          setSelectedItem(existingItem);
-        }
-        return existingItem;
-      }
-      
-      // 如果没有内容，则请求服务器
-      const updatedItem = await apiService.getItemContent(itemId);
-      
-      // 更新 items 列表中的 item
-      const updatedItems = items.map(item => 
-        item.id === updatedItem.id ? updatedItem : item
-      );
-      setItems(updatedItems);
-      
-      // 如果当前选中的是这个 item，也更新它
-      if (selectedItem && selectedItem.id === updatedItem.id) {
-        setSelectedItem(updatedItem);
-      }
-      
-      return updatedItem;
-    } catch (error) {
-      console.error('Failed to fetch item content:', error);
-      return null;
-    }
-  }, [items, selectedItem]);
-
   // 当组件挂载时获取 feeds
   useEffect(() => {
     fetchFeeds();
@@ -173,7 +133,6 @@ export const useFeedManager = () => {
     setSelectedItem,
     fetchFeeds,
     fetchItems,
-    fetchItemContent,
     addFeed,
     deleteFeed,
     updateItemStatus

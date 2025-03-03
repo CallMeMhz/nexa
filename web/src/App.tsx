@@ -20,7 +20,6 @@ function App() {
     addFeed,
     deleteFeed,
     updateItemStatus,
-    fetchItemContent
   } = useFeedManager();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -72,15 +71,7 @@ function App() {
         items={items}
         feed={selectedFeed}
         selectedItem={selectedItem}
-        onSelectItem={(item) => {
-          // 先设置选中的 item
-          setSelectedItem(item);
-          
-          // 只有当 item 没有内容时才请求
-          if (!item.content) {
-            fetchItemContent(item.id);
-          }
-        }}
+        onSelectItem={setSelectedItem}
         onRefresh={(feed_id, unread, refresh) => fetchItems({feed_id, unread, refresh})}
         isLoading={isLoading}
         onDeleteClick={handleDeleteClick}

@@ -31,7 +31,6 @@ func (svc *Service) listen(addr string) {
 	r.DELETE("/feed/:feed_id", svc.DeleteFeed)
 
 	r.GET("/item/:item_id", svc.GetItem)
-	r.GET("/item/:item_id/content", svc.GetItemContent)
 	r.PATCH("/item/:item_id", svc.UpdateItem)
 
 	r.Run(addr)
@@ -190,50 +189,6 @@ func (svc *Service) GetItem(c *gin.Context) {
 		log.WithError(err).Error("get item error")
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
-	}
-
-	c.JSON(200, gin.H{"item": item})
-}
-
-func (svc *Service) GetItemContent(c *gin.Context) {
-	ctx := c.Request.Context()
-	itemID := c.Param("item_id")
-
-	if itemID == "" {
-		c.JSON(400, gin.H{"error": "item id required"})
-		return
-	}
-	log := logrus.WithField("item_id", itemID)
-
-	item, err := svc.db.GetItem(ctx, itemID)
-	if err != nil {
-		log.WithError(err).Error("get item error")
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-
-	// If the item already has content, return it
-	if item.Content != "" {
-		c.JSON(200, gin.H{"item": item})
-		return
-	}
-
-	// Fetch the content from the original source
-	if item.Link != "" {
-		content, err := svc.fetchItemContent(ctx, item)
-		if err != nil {
-			log.WithError(err).Error("fetch content error")
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Update the item with the fetched content
-		item.Content = content
-		if err := svc.db.SaveItem(ctx, item); err != nil {
-			log.WithError(err).Error("save item error")
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
 	}
 
 	c.JSON(200, gin.H{"item": item})

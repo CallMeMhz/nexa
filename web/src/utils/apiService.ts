@@ -74,13 +74,6 @@ export const getItem = async (itemId: string): Promise<Item> => {
   return data.item;
 };
 
-// 获取 item 内容
-export const getItemContent = async (itemId: string): Promise<Item> => {
-  const response = await fetch(`${API_URL}/item/${itemId}`);
-  const data = await response.json();
-  return data.item;
-};
-
 // 更新 item 状态
 export const updateItemStatus = async (
   itemId: string, 

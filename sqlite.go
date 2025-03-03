@@ -55,7 +55,7 @@ func (s *SQLiteDB) FilterFeeds(ctx context.Context, tags []string) ([]*ListFeedR
 
 func (s *SQLiteDB) FilterItems(ctx context.Context, filter *ItemFilter) ([]*Item, error) {
 	var items []*Item
-	query := s.db.WithContext(ctx).Omit("content")
+	query := s.db.WithContext(ctx)
 	if len(filter.FeedIDs) > 0 {
 		query = query.Where("feed_id in ?", filter.FeedIDs)
 	}
