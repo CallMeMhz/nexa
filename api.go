@@ -2,6 +2,8 @@ package main
 
 import (
 	"net/url"
+	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,22 +25,35 @@ func (svc *Service) listen(addr string) {
 		c.Next()
 	})
 
-	r.POST("/login", svc.Login)
-	r.GET("/auth-status", svc.AuthStatus)
-
-	authorized := r.Group("/")
-	authorized.Use(svc.authMiddleware())
+	apiGroup := r.Group("/api")
+	apiGroup.POST("/login", svc.Login)
+	apiGroup.GET("/auth-status", svc.AuthStatus)
+	apiGroup.Use(svc.authMiddleware())
 	{
-		authorized.GET("/feeds", svc.ListAllFeeds)
-		authorized.GET("/feed/all", svc.ListAllItems)
-		authorized.GET("/feed/:feed_id", svc.ListFeedItems)
+		apiGroup.GET("/feeds", svc.ListAllFeeds)
+		apiGroup.GET("/feed/all", svc.ListAllItems)
+		apiGroup.GET("/feed/:feed_id", svc.ListFeedItems)
 
-		authorized.POST("/feed", svc.AddFeed)
-		authorized.DELETE("/feed/:feed_id", svc.DeleteFeed)
+		apiGroup.POST("/feed", svc.AddFeed)
+		apiGroup.DELETE("/feed/:feed_id", svc.DeleteFeed)
 
-		authorized.GET("/item/:item_id", svc.GetItem)
-		authorized.PATCH("/item/:item_id", svc.UpdateItem)
+		apiGroup.GET("/item/:item_id", svc.GetItem)
+		apiGroup.PATCH("/item/:item_id", svc.UpdateItem)
 	}
+
+	buildPath := "./web/build"
+
+	r.Static("/static", filepath.Join(buildPath, "static"))
+	r.StaticFile("/favicon.ico", filepath.Join(buildPath, "favicon.ico"))
+	r.StaticFile("/manifest.json", filepath.Join(buildPath, "manifest.json"))
+	r.StaticFile("/robots.txt", filepath.Join(buildPath, "robots.txt"))
+	r.StaticFile("/index.html", filepath.Join(buildPath, "index.html"))
+
+	// Handle SPA routing - serve index.html for any unmatched routes
+	r.NoRoute(func(c *gin.Context) {
+		indexPath := filepath.Join(buildPath, "index.html")
+		c.File(indexPath)
+	})
 
 	r.Run(addr)
 }
@@ -158,23 +173,23 @@ func (svc *Service) listItems(c *gin.Context, feeds ...*Feed) {
 		FeedIDs: lo.Map(feeds, func(feed *Feed, _ int) string { return feed.ID }),
 	}
 
-	if pageStr := c.Query("page"); pageStr != "" {
-		if page, err := parseInt(pageStr, 1); err == nil {
-			if page < 1 {
-				page = 1
-			}
-			if sizeStr := c.Query("size"); sizeStr != "" {
-				if size, err := parseInt(sizeStr, 10); err == nil {
-					if size < 1 {
-						size = 10
-					}
-					offset := (page - 1) * size
-					filter.Limit = &size
-					filter.Offset = &offset
-				}
-			}
-		}
+	page, err := strconv.Atoi(c.Query("page"))
+	if err != nil {
+		page = 1
 	}
+	if page < 1 {
+		page = 1
+	}
+	size, err := strconv.Atoi(c.Query("size"))
+	if err != nil {
+		size = 10
+	}
+	if size < 1 {
+		size = 10
+	}
+	offset := (page - 1) * size
+	filter.Limit = &size
+	filter.Offset = &offset
 
 	if unread := c.Query("unread") == "true"; unread {
 		filter.Unread = &unread

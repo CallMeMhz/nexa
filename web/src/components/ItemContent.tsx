@@ -1,5 +1,6 @@
 import { Item } from '../types';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   item: Item | null;
@@ -9,7 +10,7 @@ interface Props {
 }
 
 const ItemContent = ({ item, onToggleRead, onToggleStar, onToggleLike }: Props) => {
-  // 使用 ref 来跟踪当前正在查看的文章 ID
+  const { t } = useTranslation();
   const currentItemIdRef = useRef<string | null>(null);
   
   useEffect(() => {
@@ -84,7 +85,7 @@ const ItemContent = ({ item, onToggleRead, onToggleStar, onToggleLike }: Props) 
               onClick={() => onToggleRead && onToggleRead(item, !item.read)}
             >
               <span className={`w-2 h-2 rounded-full mr-2 ${item.read ? 'bg-gray-400' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`}></span>
-              {item.read ? '已读' : '未读'}
+              {item.read ? t('read') : t('unread')}
             </button>
             <button 
               className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center ${
@@ -111,7 +112,7 @@ const ItemContent = ({ item, onToggleRead, onToggleStar, onToggleLike }: Props) 
                   </svg>
                 )}
               </div>
-              {item.starred ? '已收藏' : '收藏'}
+              {item.starred ? t('starred') : t('star')}
             </button>
             <button 
               className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center ${
@@ -138,7 +139,7 @@ const ItemContent = ({ item, onToggleRead, onToggleStar, onToggleLike }: Props) 
                   </svg>
                 )}
               </div>
-              {item.liked ? '已喜欢' : '喜欢'}
+              {item.liked ? t('liked') : t('like')}
             </button>
             {item.pub_date && (
               <p className="text-gray-500 text-sm ml-2">{new Date(item.pub_date).toLocaleString()}</p>

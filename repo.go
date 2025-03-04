@@ -13,8 +13,8 @@ type ItemFilter struct {
 	Starred *bool
 	Liked   *bool
 	SortBy  *string
-	Limit   *int // 每页数量
-	Offset  *int // 偏移量，用于分页
+	Limit   *int
+	Offset  *int
 }
 
 type DB interface {

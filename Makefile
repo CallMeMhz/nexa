@@ -1,4 +1,13 @@
-clean:
+build:
+	cd web && pnpm build
+
+server:
+	CGO_ENABLED=1 NEXA_PASSWORD=nexa go run .
+
+webui:
+	cd web && pnpm start
+
+reset-db:
 	@echo "Cleaning up..."
 	@if [ -f nexa.db ]; then \
 		echo "Deleting items from database..."; \
@@ -7,7 +16,3 @@ clean:
 	else \
 		echo "Database file nexa.db not found. Nothing to clean."; \
 	fi
-
-run:
-	CGO_ENABLED=1 NEXA_PASSWORD=123456 go run .
-

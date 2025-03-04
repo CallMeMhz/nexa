@@ -1,0 +1,22 @@
+# Git
+.git
+.gitignore
+
+# Node.js
+web/node_modules
+web/build
+web/.pnpm-store
+
+# Go
+nexa
+nexa.db
+
+# Editor directories and files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db 

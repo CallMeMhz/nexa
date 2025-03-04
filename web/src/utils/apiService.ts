@@ -17,7 +17,7 @@ interface FetchItemsParams {
 
 // 获取所有 feeds
 export const fetchFeeds = async (): Promise<Feed[]> => {
-  const data = await fetchClient<{ feeds: Feed[] }>('/feeds', {
+  const data = await fetchClient<{ feeds: Feed[] }>('/api/feeds', {
     headers: getAuthHeaders()
   });
   return data.feeds;
@@ -25,7 +25,7 @@ export const fetchFeeds = async (): Promise<Feed[]> => {
 
 // 添加新 feed
 export const addFeed = async (url: string, cron: string, desc?: string): Promise<Feed> => {
-  const data = await fetchClient<{ feed: Feed }>('/feed', {
+  const data = await fetchClient<{ feed: Feed }>('/api/feed', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ export const addFeed = async (url: string, cron: string, desc?: string): Promise
 // 删除 feed
 export const deleteFeed = async (feedId: string): Promise<boolean> => {
   try {
-    await fetchClient<{ success: boolean }>(`/feed/${feedId}`, {
+    await fetchClient<{ success: boolean }>(`/api/feed/${feedId}`, {
       method: 'DELETE',
       headers: getAuthHeaders()
     });
@@ -68,7 +68,7 @@ export const fetchItems = async (params: FetchItemsParams): Promise<ItemsRespons
     effectiveFeedId = "all";
   }
   
-  const data = await fetchClient<{ items: Item[], pagination: any }>(`/feed/${effectiveFeedId}?${urlParams.toString()}`, {
+  const data = await fetchClient<{ items: Item[], pagination: any }>(`/api/feed/${effectiveFeedId}?${urlParams.toString()}`, {
     headers: getAuthHeaders()
   });
   
@@ -87,7 +87,7 @@ export const fetchItems = async (params: FetchItemsParams): Promise<ItemsRespons
 
 // 获取 item
 export const getItem = async (itemId: string): Promise<Item> => {
-  const data = await fetchClient<{ item: Item }>(`/item/${itemId}`, {
+  const data = await fetchClient<{ item: Item }>(`/api/item/${itemId}`, {
     headers: getAuthHeaders()
   });
   return data.item;
@@ -100,7 +100,7 @@ export const updateItemStatus = async (
   value: boolean
 ): Promise<boolean> => {
   try {
-    await fetchClient<{ success: boolean }>(`/item/${itemId}`, {
+    await fetchClient<{ success: boolean }>(`/api/item/${itemId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

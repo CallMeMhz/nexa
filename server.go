@@ -21,7 +21,7 @@ func Start(addr string) {
 	svc.cron = cron.New(cron.WithSeconds())
 	svc.crons = make(map[string]cron.EntryID)
 
-	db, err := NewSQLiteDB("nexa.db")
+	db, err := NewSQLiteDB("data/nexa.db")
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to open sqlite db")
 	}

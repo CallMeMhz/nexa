@@ -34,9 +34,20 @@ func (s *SQLiteDB) GetFeed(ctx context.Context, feedID string) (*Feed, error) {
 	return feed, err
 }
 
-// 这里没有连 items 一起删
 func (s *SQLiteDB) DeleteFeed(ctx context.Context, feedID string) error {
-	return s.db.WithContext(ctx).Delete(&Feed{}, "id = ?", feedID).Error
+	tx := s.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if err := tx.Delete(&Item{}, "feed_id = ?", feedID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Delete(&Feed{}, "id = ?", feedID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit().Error
 }
 
 func (s *SQLiteDB) FilterFeeds(ctx context.Context, tags []string) ([]*ListFeedResult, error) {
@@ -77,7 +88,7 @@ func (s *SQLiteDB) FilterItems(ctx context.Context, filter *ItemFilter) ([]*Item
 		query = query.Order("pub_date desc")
 	}
 
-	// 应用分页参数
+	// pagination
 	if filter.Limit != nil {
 		query = query.Limit(*filter.Limit)
 	}
@@ -91,7 +102,6 @@ func (s *SQLiteDB) FilterItems(ctx context.Context, filter *ItemFilter) ([]*Item
 	return items, nil
 }
 
-// 添加一个新方法来获取总数
 func (s *SQLiteDB) CountItems(ctx context.Context, filter *ItemFilter) (int64, error) {
 	var count int64
 	query := s.db.WithContext(ctx).Model(&Item{})
@@ -148,7 +158,6 @@ func (s *SQLiteDB) UpdateItem(ctx context.Context, itemID string, read, starred,
 	return s.db.WithContext(ctx).Model(&Item{}).Where("id = ?", itemID).Updates(updates).Error
 }
 
-// SaveItem saves an item to the database
 func (s *SQLiteDB) SaveItem(ctx context.Context, item *Item) error {
 	return s.db.WithContext(ctx).Save(item).Error
 }

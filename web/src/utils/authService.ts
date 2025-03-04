@@ -7,7 +7,7 @@ const TOKEN_KEY = 'nexa_token';
 // 检查认证状态
 export const checkAuthStatus = async (): Promise<boolean> => {
   try {
-    const data = await fetchClient<{ auth_required: boolean }>('/auth-status');
+    const data = await fetchClient<{ auth_required: boolean }>('/api/auth-status');
     return data.auth_required;
   } catch (error) {
     console.error('Failed to check auth status:', error);
@@ -17,7 +17,7 @@ export const checkAuthStatus = async (): Promise<boolean> => {
 
 // 登录 - 注意：这里不使用 fetchClient，因为我们需要特殊处理登录错误
 export const login = async (password: string): Promise<LoginResponse> => {
-  const response = await fetch(`${API_URL}/login`, {
+  const response = await fetch(`${API_URL}/api/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

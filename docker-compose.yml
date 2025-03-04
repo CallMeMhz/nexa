@@ -1,0 +1,12 @@
+services:
+  nexa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "7766:7766"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NEXA_PASSWORD=nexa
+    restart: unless-stopped 
