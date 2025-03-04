@@ -1,6 +1,7 @@
 import { Feed, Item, Pagination } from '../types';
 import { getFaviconUrl, getFeedDisplayName, formatTimestamp, getDomain } from '../utils/feedUtils';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   items: Item[];
@@ -30,6 +31,7 @@ const ItemList = ({
   const filteredItems = items;  // TODO: implement feed filtering
   const [isHeaderHovered, setIsHeaderHovered] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   // 处理滚动事件，实现无限滚动
   const handleScroll = useCallback(() => {
@@ -91,7 +93,7 @@ const ItemList = ({
               </div>
             )}
             <div className="text-xs text-gray-600 mt-1">
-              共 {pagination.total} 条
+              {t('common.totalItems', { count: pagination.total })}
             </div>
           </h2>
           
@@ -120,7 +122,7 @@ const ItemList = ({
             <button 
               onClick={() => onRefresh(feed.id, feed.id === "unread", true)}
               className={`mr-2 p-1 rounded-full hover:bg-gray-100 text-gray-600 ${isLoading ? 'animate-spin' : ''}`}
-              title="刷新"
+              title={t('feed.refresh')}
               disabled={isLoading}
             >
               {/* TODO: reverse the direction of the refresh icon */}
@@ -137,7 +139,7 @@ const ItemList = ({
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-1">
           {filteredItems.map(item => (
             <div
               key={item.guid}
@@ -210,6 +212,7 @@ const ItemList = ({
               </div>
             </div>
           ))}
+          
           
           {/* 加载状态指示器 */}
           {isLoading && (

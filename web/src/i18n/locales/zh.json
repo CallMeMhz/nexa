@@ -1,0 +1,53 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "search": "搜索",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "save": "保存",
+    "add": "添加",
+    "language": "语言",
+    "optional": "可选",
+    "totalItems": "共 {{count}} 条"
+  },
+  "nav": {
+    "home": "首页",
+    "settings": "设置",
+    "all": "全部",
+    "today": "今日",
+    "unread": "未读",
+    "starred": "收藏",
+    "liked": "喜欢",
+    "logout": "退出登录"
+  },
+  "login": {
+    "title": "请输入密码以访问您的 RSS 阅读器",
+    "password": "密码",
+    "placeholder": "请输入密码",
+    "button": "登录",
+    "loading": "登录中...",
+    "error": "密码错误",
+    "genericError": "登录失败",
+    "emptyError": "请输入密码"
+  },
+  "settings": {
+    "title": "设置",
+    "language": "语言",
+    "theme": "主题",
+    "light": "明亮",
+    "dark": "暗黑",
+    "system": "系统"
+  },
+  "feed": {
+    "add": "添加订阅",
+    "delete": "删除订阅",
+    "url": "订阅链接",
+    "title": "标题",
+    "description": "描述",
+    "cron": "更新计划",
+    "refresh": "刷新",
+    "deleteConfirm": "确定要删除这个订阅吗？"
+  }
+} 

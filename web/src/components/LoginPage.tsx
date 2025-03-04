@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { login } from '../utils/authService';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -13,7 +16,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) {
-      setError('请输入密码');
+      setError(t('login.emptyError'));
       return;
     }
 
@@ -23,12 +26,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     try {
       const response = await login(password);
       if (response.auth_required && !response.token) {
-        setError('密码错误');
+        setError(t('login.error'));
       } else {
         onLoginSuccess();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '登录失败');
+      setError(err instanceof Error ? err.message : t('login.genericError'));
     } finally {
       setIsLoading(false);
     }
@@ -51,14 +54,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </div>
           </div>
           <p className="mt-3 text-center text-sm text-gray-600">
-            请输入密码以访问您的 RSS 阅读器
+            {t('login.title')}
           </p>
+          
+          <div className="mt-3 flex justify-center">
+            <LanguageSwitcher />
+          </div>
         </div>
         <div className="mt-8 bg-white py-8 px-4 shadow-sm rounded-lg sm:px-10 border border-gray-200">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                密码
+                {t('login.password')}
               </label>
               <div className="mt-1">
                 <input
@@ -68,7 +75,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   autoComplete="current-password"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="请输入密码"
+                  placeholder={t('login.placeholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -99,9 +106,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                           }}>
                       </div>
                     </div>
-                    登录中...
+                    {t('login.loading')}
                   </div>
-                ) : '登录'}
+                ) : t('login.button')}
               </button>
             </div>
           </form>
