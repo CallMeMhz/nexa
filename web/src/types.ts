@@ -33,3 +33,14 @@ export interface ItemsResponse {
   items: Item[];
   pagination: Pagination;
 }
+
+export interface AuthState {
+  token: string;
+  isAuthenticated: boolean;
+  authRequired: boolean;
+}
+
+export interface LoginResponse {
+  token: string;
+  auth_required: boolean;
+}

@@ -101,10 +101,16 @@ const ItemList = ({
             {!isSystemFeed && onDeleteClick && isHeaderHovered && (
               <button
                 onClick={() => onDeleteClick(feed)}
-                className="mr-2 p-1 rounded-full hover:bg-gray-100 text-red-600 transition-opacity"
+                className="mr-2 p-1 rounded-full hover:bg-gray-100 transition-opacity"
                 title="删除订阅"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="url(#delete-gradient)">
+                  <defs>
+                    <linearGradient id="delete-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#EF4444" />
+                      <stop offset="100%" stopColor="#B91C1C" />
+                    </linearGradient>
+                  </defs>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </button>
@@ -117,7 +123,14 @@ const ItemList = ({
               title="刷新"
               disabled={isLoading}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {/* TODO: reverse the direction of the refresh icon */}
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="url(#refresh-gradient)">
+                <defs>
+                  <linearGradient id="refresh-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#3B82F6" />
+                    <stop offset="100%" stopColor="#8B5CF6" />
+                  </linearGradient>
+                </defs>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
@@ -151,16 +164,28 @@ const ItemList = ({
                   </h3>
                   <div className="flex flex-col items-center space-y-1 flex-shrink-0 ml-1">
                     {!item.read && (
-                      <div className="w-2 h-2 bg-red-500 rounded-full" aria-label="Unread"></div>
+                      <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" aria-label="Unread"></div>
                     )}
                     {item.starred && (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-yellow-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="url(#star-item-gradient)" className="w-3 h-3">
+                        <defs>
+                          <linearGradient id="star-item-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#3B82F6" />
+                            <stop offset="100%" stopColor="#8B5CF6" />
+                          </linearGradient>
+                        </defs>
                         <title>Starred</title>
                         <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
                       </svg>
                     )}
                     {item.liked && (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-pink-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="url(#heart-item-gradient)" className="w-3 h-3">
+                        <defs>
+                          <linearGradient id="heart-item-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#3B82F6" />
+                            <stop offset="100%" stopColor="#8B5CF6" />
+                          </linearGradient>
+                        </defs>
                         <title>Liked</title>
                         <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
                       </svg>
@@ -189,7 +214,16 @@ const ItemList = ({
           {/* 加载状态指示器 */}
           {isLoading && (
             <div className="flex justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+              <div className="relative w-6 h-6">
+                <div className="absolute inset-0 rounded-full border-2 border-transparent animate-spin" 
+                     style={{ 
+                       borderTopColor: '#3B82F6', 
+                       borderRightColor: '#8B5CF6',
+                       borderBottomColor: 'transparent',
+                       borderLeftColor: 'transparent'
+                     }}>
+                </div>
+              </div>
             </div>
           )}
           

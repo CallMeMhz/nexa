@@ -9,5 +9,5 @@ clean:
 	fi
 
 run:
-	CGO_ENABLED=1 go run .
+	CGO_ENABLED=1 NEXA_PASSWORD=123456 go run .
 

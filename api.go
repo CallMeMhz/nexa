@@ -15,7 +15,7 @@ func (svc *Service) listen(addr string) {
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
@@ -23,15 +23,22 @@ func (svc *Service) listen(addr string) {
 		c.Next()
 	})
 
-	r.GET("/feeds", svc.ListAllFeeds)
-	r.GET("/feed/all", svc.ListAllItems)
-	r.GET("/feed/:feed_id", svc.ListFeedItems)
+	r.POST("/login", svc.Login)
+	r.GET("/auth-status", svc.AuthStatus)
 
-	r.POST("/feed", svc.AddFeed)
-	r.DELETE("/feed/:feed_id", svc.DeleteFeed)
+	authorized := r.Group("/")
+	authorized.Use(svc.authMiddleware())
+	{
+		authorized.GET("/feeds", svc.ListAllFeeds)
+		authorized.GET("/feed/all", svc.ListAllItems)
+		authorized.GET("/feed/:feed_id", svc.ListFeedItems)
 
-	r.GET("/item/:item_id", svc.GetItem)
-	r.PATCH("/item/:item_id", svc.UpdateItem)
+		authorized.POST("/feed", svc.AddFeed)
+		authorized.DELETE("/feed/:feed_id", svc.DeleteFeed)
+
+		authorized.GET("/item/:item_id", svc.GetItem)
+		authorized.PATCH("/item/:item_id", svc.UpdateItem)
+	}
 
 	r.Run(addr)
 }
@@ -151,7 +158,6 @@ func (svc *Service) listItems(c *gin.Context, feeds ...*Feed) {
 		FeedIDs: lo.Map(feeds, func(feed *Feed, _ int) string { return feed.ID }),
 	}
 
-	// 处理分页参数
 	if pageStr := c.Query("page"); pageStr != "" {
 		if page, err := parseInt(pageStr, 1); err == nil {
 			if page < 1 {
@@ -185,7 +191,6 @@ func (svc *Service) listItems(c *gin.Context, feeds ...*Feed) {
 		filter.PubDate = &todayTime
 	}
 
-	// 获取总数
 	total, err := svc.db.CountItems(ctx, filter)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
@@ -258,4 +263,79 @@ func (svc *Service) UpdateItem(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"success": true})
+}
+
+// authMiddleware 是一个Gin中间件，用于验证请求中的JWT令牌
+func (svc *Service) authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !authConfig.Enabled {
+			// 如果认证未启用，直接放行所有请求
+			c.Next()
+			return
+		}
+
+		// 从请求头中获取令牌
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(401, gin.H{"error": "authorization required"})
+			c.Abort()
+			return
+		}
+
+		// 令牌格式应为 "Bearer <token>"
+		const prefix = "Bearer "
+		if len(authHeader) <= len(prefix) || authHeader[:len(prefix)] != prefix {
+			c.JSON(401, gin.H{"error": "invalid authorization format"})
+			c.Abort()
+			return
+		}
+
+		tokenString := authHeader[len(prefix):]
+
+		// 验证令牌
+		if !validateToken(tokenString) {
+			c.JSON(401, gin.H{"error": "invalid or expired token"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+func (svc *Service) Login(c *gin.Context) {
+	// 如果认证未启用，直接返回成功
+	if !authConfig.Enabled {
+		c.JSON(200, gin.H{"token": "", "auth_required": false})
+		return
+	}
+
+	req := new(struct {
+		Password string `json:"password"`
+	})
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": "invalid request"})
+		return
+	}
+
+	// 验证密码
+	if !validatePassword(req.Password) {
+		c.JSON(401, gin.H{"error": "invalid password"})
+		return
+	}
+
+	// 生成JWT令牌
+	token, err := generateToken()
+	if err != nil {
+		logrus.WithError(err).Error("Failed to generate token")
+		c.JSON(500, gin.H{"error": "failed to generate token"})
+		return
+	}
+
+	c.JSON(200, gin.H{"token": token, "auth_required": true})
+}
+
+// AuthStatus 返回当前的认证状态
+func (svc *Service) AuthStatus(c *gin.Context) {
+	c.JSON(200, gin.H{"auth_required": authConfig.Enabled})
 }
