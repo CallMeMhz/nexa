@@ -9,7 +9,7 @@ RSS reader built with a Go backend server, React frontend, and SQLite database.
 ```bash
 docker run -d -p 7766:7766 \
   -v $(pwd)/data:/app/data \
-  -e NEXA_PASSWORD=yourpassword \
+  -e NEXA_PASSWORD=nexa \
   --name nexa \
   callmemhz/nexa:latest
 ```

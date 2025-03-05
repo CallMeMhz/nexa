@@ -80,7 +80,9 @@ func (svc *Service) AddFeed(c *gin.Context) {
 		return
 	}
 
+	id := Hash(req.Url)
 	feed := &Feed{
+		ID:   id,
 		Link: req.Url,
 		Desc: req.Desc,
 		Cron: req.Cron,

@@ -50,7 +50,6 @@ export const deleteFeed = async (feedId: string): Promise<boolean> => {
   }
 };
 
-// 获取 feed 的 items
 export const fetchItems = async (params: FetchItemsParams): Promise<ItemsResponse> => {
   const { feed_id, unread, starred, liked, today, refresh, page, size } = params;
   
