@@ -105,17 +105,19 @@ const ItemList = ({
               }}
             />
           )}
-          <h2 className="text-lg font-semibold flex-1 truncate">
-            {getFeedDisplayName(feed)}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-semibold truncate">
+              {getFeedDisplayName(feed)}
+            </h2>
             {feed.desc && (
-              <div className="text-xs text-gray-500 mb-1 truncate" title={feed.desc}>
+              <div className="text-sm text-gray-600 mt-1 truncate" title={feed.desc}>
                 {feed.desc}
               </div>
             )}
-            <div className="text-xs text-gray-600 mt-1">
+            <div className="text-xs text-gray-500 mt-1">
               {t('common.totalItems', { count: pagination.total })}
             </div>
-          </h2>
+          </div>
           
           {/* 操作按钮区域 */}
           <div className="flex items-center">
