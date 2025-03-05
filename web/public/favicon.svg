@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- 定义渐变和颜色 -->
+  <defs>
+    <linearGradient id="blue-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" /> <!-- 蓝色 -->
+      <stop offset="100%" stop-color="#2563EB" /> <!-- 深蓝色 -->
+    </linearGradient>
+    <linearGradient id="text-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1F2937" /> <!-- 深灰色 -->
+      <stop offset="100%" stop-color="#374151" /> <!-- 灰色 -->
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景圆形 -->
+  <circle cx="32" cy="32" r="30" fill="white" />
+  
+  <!-- 字母N - 蓝色部分 - 放大版 -->
+  <path d="M16,16 L16,48 L24,48 L24,28 L40,48 L48,48 L48,16 L40,16 L40,36 L24,16 Z" 
+        fill="url(#blue-gradient)" />
+  
+  <!-- 右上角的紫色圆点 -->
+  <circle cx="48" cy="16" r="5" fill="#8B5CF6" />
+</svg> 
