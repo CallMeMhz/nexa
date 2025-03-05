@@ -5,6 +5,7 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "delete": "Delete",
+    "confirmDelete": "Confirm Delete",
     "edit": "Edit",
     "save": "Save",
     "add": "Add",
@@ -42,13 +43,15 @@
   },
   "feed": {
     "add": "Add Feed",
+    "edit": "Edit Feed",
     "delete": "Delete Feed",
     "url": "Feed URL",
     "title": "Title",
     "description": "Description",
     "cron": "Update Schedule",
     "refresh": "Refresh",
-    "deleteConfirm": "Are you sure you want to delete this feed?"
+    "deleteConfirm": "Are you sure you want to delete this feed?",
+    "suspend": "Suspended"
   },
   "search": {
     "placeholder": "Search articles...",

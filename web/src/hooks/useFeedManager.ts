@@ -194,6 +194,24 @@ export const useFeedManager = () => {
     }
   }, [isLoading, pagination, selectedFeed, searchQuery]);
 
+  // 更新 feed
+  const updateFeed = useCallback(async (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean) => {
+    try {
+      const updatedFeed = await apiService.updateFeed(feedId, url, cron, desc, suspended);
+      await fetchFeeds();
+      
+      // 如果当前选中的是被更新的 feed，则更新选中的 feed
+      if (selectedFeed.id === feedId) {
+        setSelectedFeed(updatedFeed);
+      }
+      
+      return updatedFeed;
+    } catch (error) {
+      console.error('Failed to update feed:', error);
+      throw error;
+    }
+  }, [fetchFeeds, selectedFeed]);
+
   // 当组件挂载时获取 feeds
   useEffect(() => {
     fetchFeeds();
@@ -226,6 +244,7 @@ export const useFeedManager = () => {
     searchItems,
     loadMoreItems,
     addFeed,
+    updateFeed,
     deleteFeed,
     updateItemStatus
   };

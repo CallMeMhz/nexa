@@ -138,4 +138,17 @@ export const updateItemStatus = async (
     console.error(`Failed to update ${field} status:`, error);
     return false;
   }
+};
+
+// 更新 feed
+export const updateFeed = async (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean): Promise<Feed> => {
+  const data = await fetchClient<{ feed: Feed }>(`/api/feed/${feedId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders()
+    },
+    body: JSON.stringify({ url, cron, desc, suspended }),
+  });
+  return data.feed;
 }; 

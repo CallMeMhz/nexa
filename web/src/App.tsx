@@ -27,6 +27,7 @@ function App() {
     fetchItems,
     loadMoreItems,
     addFeed,
+    updateFeed,
     deleteFeed,
     updateItemStatus,
     fetchFeeds,
@@ -86,10 +87,15 @@ function App() {
     setShowLoginSuccess(true);
   }, [login]);
 
-  // 处理删除按钮点击
+  // 处理删除按钮点击 - 显示确认对话框
   const handleDeleteClick = (feed: Feed) => {
     setFeedToDelete(feed);
     setIsDeleteModalOpen(true);
+  };
+
+  // 直接删除 feed，不显示确认对话框
+  const handleDirectDelete = async (feedId: string) => {
+    await deleteFeed(feedId);
   };
 
   // 处理添加 feed
@@ -122,6 +128,11 @@ function App() {
   // 处理搜索
   const handleSearch = (query: string) => {
     searchItems(query);
+  };
+
+  // 处理更新 feed
+  const handleUpdateFeed = async (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean) => {
+    await updateFeed(feedId, url, cron, desc, suspended);
   };
 
   // 如果认证状态正在加载，显示加载中
@@ -162,6 +173,8 @@ function App() {
         onRefresh={(feed_id, unread, refresh) => fetchItems({feed_id, unread, refresh})}
         isLoading={isLoading}
         onDeleteClick={handleDeleteClick}
+        onDirectDelete={handleDirectDelete}
+        onUpdateFeed={handleUpdateFeed}
         feeds={feeds}
         pagination={pagination}
         onLoadMore={loadMoreItems}

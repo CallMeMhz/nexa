@@ -6,6 +6,8 @@ export interface Feed {
   description: string;
   tags: string[];
   unread_count: number;
+  cron?: string;
+  suspended?: boolean;
 }
 
 export interface Item {

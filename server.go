@@ -50,13 +50,17 @@ func (svc *Service) initCron() {
 }
 
 func (svc *Service) subscribe(feed *Feed) {
-	entryID, _ := svc.cron.AddFunc(feed.Cron, func() { svc.fetch(context.Background(), feed) })
-	svc.crons[feed.Link] = entryID
+	if _, ok := svc.crons[feed.ID]; !ok {
+		entryID, _ := svc.cron.AddFunc(feed.Cron, func() { svc.fetch(context.Background(), feed) })
+		svc.crons[feed.ID] = entryID
+	}
 }
 
 func (svc *Service) unsubscribe(feedID string) {
-	svc.cron.Remove(svc.crons[feedID])
-	delete(svc.crons, feedID)
+	if entryID, ok := svc.crons[feedID]; ok {
+		svc.cron.Remove(entryID)
+		delete(svc.crons, feedID)
+	}
 }
 
 func (svc *Service) fetch(ctx context.Context, feed *Feed) error {

@@ -16,7 +16,7 @@ func (svc *Service) listen(addr string) {
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
@@ -35,6 +35,7 @@ func (svc *Service) listen(addr string) {
 		apiGroup.GET("/feed/:feed_id", svc.ListFeedItems)
 
 		apiGroup.POST("/feed", svc.AddFeed)
+		apiGroup.PUT("/feed/:feed_id", svc.UpdateFeed)
 		apiGroup.DELETE("/feed/:feed_id", svc.DeleteFeed)
 
 		apiGroup.GET("/search", svc.SearchItems)
@@ -63,9 +64,10 @@ func (svc *Service) AddFeed(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	req := new(struct {
-		Url  string `json:"url"`
-		Desc string `json:"desc"`
-		Cron string `json:"cron"`
+		Url       string `json:"url"`
+		Desc      string `json:"desc"`
+		Cron      string `json:"cron"`
+		Suspended bool   `json:"suspended"`
 	})
 	if err := c.BindJSON(req); err != nil {
 		logrus.WithError(err).Warn("invalid request")
@@ -83,10 +85,11 @@ func (svc *Service) AddFeed(c *gin.Context) {
 
 	id := Hash(req.Url)
 	feed := &Feed{
-		ID:   id,
-		Link: req.Url,
-		Desc: req.Desc,
-		Cron: req.Cron,
+		ID:        id,
+		Link:      req.Url,
+		Desc:      req.Desc,
+		Cron:      req.Cron,
+		Suspended: req.Suspended,
 	}
 
 	if err := svc.db.SaveFeed(ctx, feed); err != nil {
@@ -94,10 +97,54 @@ func (svc *Service) AddFeed(c *gin.Context) {
 		return
 	}
 
-	svc.subscribe(feed)
-	if err := svc.fetch(ctx, feed); err != nil {
-		logrus.WithField("feed_id", feed.ID).WithError(err).Error("fetch feed error")
+	if !feed.Suspended {
+		svc.subscribe(feed)
+		if err := svc.fetch(ctx, feed); err != nil {
+			logrus.WithField("feed_id", feed.ID).WithError(err).Error("fetch feed error")
+		}
 	}
+
+	c.JSON(200, gin.H{"feed": feed})
+}
+
+func (svc *Service) UpdateFeed(c *gin.Context) {
+	ctx := c.Request.Context()
+	feedID := c.Param("feed_id")
+
+	req := new(struct {
+		Url       string `json:"url"`
+		Desc      string `json:"desc"`
+		Cron      string `json:"cron"`
+		Suspended bool   `json:"suspended"`
+	})
+	if err := c.BindJSON(req); err != nil {
+		logrus.WithError(err).Warn("invalid request")
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	feed, err := svc.db.GetFeed(ctx, feedID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	feed.Link = req.Url
+	feed.Desc = req.Desc
+	feed.Cron = req.Cron
+	feed.Suspended = req.Suspended
+
+	if err := svc.db.SaveFeed(ctx, feed); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	if feed.Suspended {
+		svc.unsubscribe(feedID)
+	} else {
+		svc.subscribe(feed)
+	}
+
 	c.JSON(200, gin.H{"feed": feed})
 }
 

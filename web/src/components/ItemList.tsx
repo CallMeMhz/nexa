@@ -3,6 +3,7 @@ import { getFaviconUrl, getFeedDisplayName, formatTimestamp, getDomain } from '.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import SearchBox from './SearchBox';
+import EditFeedModal from './EditFeedModal';
 
 interface Props {
   items: Item[];
@@ -12,6 +13,8 @@ interface Props {
   onRefresh: (feedID: string, unread: boolean, refresh: boolean) => void;
   isLoading: boolean;
   onDeleteClick?: (feed: Feed) => void;
+  onDirectDelete?: (feedId: string) => void;
+  onUpdateFeed?: (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean) => void;
   feeds: Feed[];
   pagination: Pagination;
   onLoadMore: () => void;
@@ -26,6 +29,8 @@ const ItemList = ({
   onRefresh, 
   isLoading, 
   onDeleteClick, 
+  onDirectDelete,
+  onUpdateFeed,
   feeds,
   pagination,
   onLoadMore,
@@ -33,6 +38,7 @@ const ItemList = ({
 }: Props) => {
   const filteredItems = items;  // TODO: implement feed filtering
   const [isHeaderHovered, setIsHeaderHovered] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
 
@@ -69,6 +75,16 @@ const ItemList = ({
   // 检查是否是系统内置的 feed
   const isSystemFeed = feed && feed.id && ["all", "unread", "starred", "liked", "today"].includes(feed.id);
 
+  const handleEditClick = () => {
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateFeed = (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean) => {
+    if (onUpdateFeed) {
+      onUpdateFeed(feedId, url, cron, desc, suspended);
+    }
+  };
+
   return (
     <div className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
       {/* 固定的顶部区域 */}
@@ -103,21 +119,21 @@ const ItemList = ({
           
           {/* 操作按钮区域 */}
           <div className="flex items-center">
-            {/* 删除按钮 - 只在自定义 feed 上且鼠标悬停时显示 */}
-            {!isSystemFeed && onDeleteClick && isHeaderHovered && (
+            {/* 编辑按钮 - 只在自定义 feed 上且鼠标悬停时显示 */}
+            {!isSystemFeed && onUpdateFeed && isHeaderHovered && (
               <button
-                onClick={() => onDeleteClick(feed)}
+                onClick={handleEditClick}
                 className="mr-2 p-1 rounded-full hover:bg-gray-100 transition-opacity"
-                title="删除订阅"
+                title={t('feed.edit')}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="url(#delete-gradient)">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="url(#edit-gradient)">
                   <defs>
-                    <linearGradient id="delete-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#EF4444" />
-                      <stop offset="100%" stopColor="#B91C1C" />
+                    <linearGradient id="edit-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#3B82F6" />
+                      <stop offset="100%" stopColor="#8B5CF6" />
                     </linearGradient>
                   </defs>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </button>
             )}
@@ -253,6 +269,20 @@ const ItemList = ({
           )}
         </div>
       </div>
+
+      {/* 编辑 Feed 模态框 */}
+      <EditFeedModal
+        isOpen={isEditModalOpen}
+        feed={feed}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleUpdateFeed}
+        onDelete={(feedId) => {
+          if (onDirectDelete) {
+            onDirectDelete(feedId);
+            setIsEditModalOpen(false);
+          }
+        }}
+      />
     </div>
   );
 };
