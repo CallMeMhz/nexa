@@ -82,6 +82,11 @@ func (s *SQLiteDB) FilterItems(ctx context.Context, filter *ItemFilter) ([]*Item
 	if filter.Liked != nil {
 		query = query.Where("liked = ?", *filter.Liked)
 	}
+	if filter.SearchQuery != nil && *filter.SearchQuery != "" {
+		searchTerm := "%" + *filter.SearchQuery + "%"
+		query = query.Where("title LIKE ? OR content LIKE ? OR description LIKE ?",
+			searchTerm, searchTerm, searchTerm)
+	}
 	if filter.SortBy != nil {
 		query = query.Order(*filter.SortBy)
 	} else {
@@ -105,7 +110,6 @@ func (s *SQLiteDB) FilterItems(ctx context.Context, filter *ItemFilter) ([]*Item
 func (s *SQLiteDB) CountItems(ctx context.Context, filter *ItemFilter) (int64, error) {
 	var count int64
 	query := s.db.WithContext(ctx).Model(&Item{})
-
 	if len(filter.FeedIDs) > 0 {
 		query = query.Where("feed_id in ?", filter.FeedIDs)
 	}
@@ -121,7 +125,11 @@ func (s *SQLiteDB) CountItems(ctx context.Context, filter *ItemFilter) (int64, e
 	if filter.Liked != nil {
 		query = query.Where("liked = ?", *filter.Liked)
 	}
-
+	if filter.SearchQuery != nil && *filter.SearchQuery != "" {
+		searchTerm := "%" + *filter.SearchQuery + "%"
+		query = query.Where("title LIKE ? OR content LIKE ? OR description LIKE ?",
+			searchTerm, searchTerm, searchTerm)
+	}
 	if err := query.Count(&count).Error; err != nil {
 		return 0, err
 	}

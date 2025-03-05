@@ -30,6 +30,7 @@ function App() {
     deleteFeed,
     updateItemStatus,
     fetchFeeds,
+    searchItems
   } = useFeedManager();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -118,6 +119,11 @@ function App() {
     updateItemStatus(item, 'liked', liked);
   };
 
+  // 处理搜索
+  const handleSearch = (query: string) => {
+    searchItems(query);
+  };
+
   // 如果认证状态正在加载，显示加载中
   if (authLoading) {
     return (
@@ -159,6 +165,7 @@ function App() {
         feeds={feeds}
         pagination={pagination}
         onLoadMore={loadMoreItems}
+        onSearch={handleSearch}
       />
       <ItemContent 
         item={selectedItem} 

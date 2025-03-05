@@ -2,6 +2,7 @@ import { Feed, Item, Pagination } from '../types';
 import { getFaviconUrl, getFeedDisplayName, formatTimestamp, getDomain } from '../utils/feedUtils';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import SearchBox from './SearchBox';
 
 interface Props {
   items: Item[];
@@ -14,6 +15,7 @@ interface Props {
   feeds: Feed[];
   pagination: Pagination;
   onLoadMore: () => void;
+  onSearch: (query: string) => void;
 }
 
 const ItemList = ({ 
@@ -26,7 +28,8 @@ const ItemList = ({
   onDeleteClick, 
   feeds,
   pagination,
-  onLoadMore
+  onLoadMore,
+  onSearch
 }: Props) => {
   const filteredItems = items;  // TODO: implement feed filtering
   const [isHeaderHovered, setIsHeaderHovered] = useState(false);
@@ -67,11 +70,12 @@ const ItemList = ({
   const isSystemFeed = feed && feed.id && ["all", "unread", "starred", "liked", "today"].includes(feed.id);
 
   return (
-    <div ref={listRef} className="w-96 bg-white border-r border-gray-200 overflow-y-auto">
-      <div className="p-4">
+    <div className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
+      {/* 固定的顶部区域 */}
+      <div className="p-6 shadow-sm flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
         {/* 标题栏 - 显示当前源信息 */}
         <div 
-          className="flex items-center mb-4 relative group"
+          className="flex items-center mb-3 relative group"
           onMouseEnter={() => setIsHeaderHovered(true)}
           onMouseLeave={() => setIsHeaderHovered(false)}
         >
@@ -88,7 +92,7 @@ const ItemList = ({
           <h2 className="text-lg font-semibold flex-1 truncate">
             {getFeedDisplayName(feed)}
             {feed.desc && (
-              <div className="text-xs text-gray-500 mb-2 truncate" title={feed.desc}>
+              <div className="text-xs text-gray-500 mb-1 truncate" title={feed.desc}>
                 {feed.desc}
               </div>
             )}
@@ -139,6 +143,17 @@ const ItemList = ({
           </div>
         </div>
 
+        {/* 搜索框 */}
+        <div>
+          <SearchBox 
+            onSearch={onSearch} 
+            placeholder={t('search.placeholder')}
+          />
+        </div>
+      </div>
+
+      {/* 可滚动的列表区域 */}
+      <div ref={listRef} className="flex-1 overflow-y-auto p-4">
         <div className="space-y-1">
           {filteredItems.map(item => (
             <div

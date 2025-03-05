@@ -9,6 +9,7 @@ export const useFeedManager = () => {
   const [selectedFeed, setSelectedFeed] = useState<Feed>({id: "all", title: "All"} as Feed);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // 获取所有 feeds
   const fetchFeeds = useCallback(async () => {
@@ -32,7 +33,8 @@ export const useFeedManager = () => {
     today?: boolean,
     refresh?: boolean,
     page?: number,
-    size?: number
+    size?: number,
+    q?: string
   }) => {
     setIsLoading(true);
     try {
@@ -45,6 +47,43 @@ export const useFeedManager = () => {
       setIsLoading(false);
     }
   }, []);
+
+  // 搜索功能
+  const searchItems = useCallback(async (query: string) => {
+    setSearchQuery(query);
+    setIsLoading(true);
+    try {
+      if (query.trim() === '') {
+        // 如果搜索查询为空，恢复到正常的feed视图
+        const unread = selectedFeed.id === "unread" ? true : undefined;
+        const starred = selectedFeed.id === "starred" ? true : undefined;
+        const liked = selectedFeed.id === "liked" ? true : undefined;
+        const today = selectedFeed.id === "today" ? true : undefined;
+        
+        const response = await apiService.fetchItems({
+          feed_id: selectedFeed.id, 
+          unread, 
+          starred, 
+          liked, 
+          today,
+          page: 1,
+          size: 10
+        });
+        
+        setItems(response.items);
+        setPagination(response.pagination);
+      } else {
+        // 执行搜索
+        const response = await apiService.searchItems(query);
+        setItems(response.items);
+        setPagination(response.pagination);
+      }
+    } catch (error) {
+      console.error('Failed to search items:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedFeed]);
 
   // 添加新 feed
   const addFeed = useCallback(async (url: string, cron: string, desc?: string) => {
@@ -119,22 +158,31 @@ export const useFeedManager = () => {
     }
     
     const nextPage = pagination.page + 1;
-    const unread = selectedFeed.id === "unread" ? true : undefined;
-    const starred = selectedFeed.id === "starred" ? true : undefined;
-    const liked = selectedFeed.id === "liked" ? true : undefined;
-    const today = selectedFeed.id === "today" ? true : undefined;
     
     setIsLoading(true);
     try {
-      const response = await apiService.fetchItems({
-        feed_id: selectedFeed.id, 
-        unread, 
-        starred, 
-        liked, 
-        today,
-        page: nextPage,
-        size: pagination.size
-      });
+      let response;
+      
+      if (searchQuery) {
+        // 如果是搜索状态，加载更多搜索结果
+        response = await apiService.searchItems(searchQuery, nextPage, pagination.size);
+      } else {
+        // 否则加载正常的feed内容
+        const unread = selectedFeed.id === "unread" ? true : undefined;
+        const starred = selectedFeed.id === "starred" ? true : undefined;
+        const liked = selectedFeed.id === "liked" ? true : undefined;
+        const today = selectedFeed.id === "today" ? true : undefined;
+        
+        response = await apiService.fetchItems({
+          feed_id: selectedFeed.id, 
+          unread, 
+          starred, 
+          liked, 
+          today,
+          page: nextPage,
+          size: pagination.size
+        });
+      }
       
       // 合并项目
       setItems(prevItems => [...prevItems, ...response.items]);
@@ -144,7 +192,7 @@ export const useFeedManager = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, pagination, selectedFeed, setItems]);
+  }, [isLoading, pagination, selectedFeed, searchQuery]);
 
   // 当组件挂载时获取 feeds
   useEffect(() => {
@@ -155,6 +203,7 @@ export const useFeedManager = () => {
   useEffect(() => {
     setItems([]);
     setPagination({ total: 0, page: 1, size: 10 });
+    setSearchQuery(''); // 清空搜索查询
     const unread = selectedFeed.id === "unread" ? true : undefined;
     const starred = selectedFeed.id === "starred" ? true : undefined;
     const liked = selectedFeed.id === "liked" ? true : undefined;
@@ -169,10 +218,12 @@ export const useFeedManager = () => {
     selectedFeed,
     selectedItem,
     isLoading,
+    searchQuery,
     setSelectedFeed,
     setSelectedItem,
     fetchFeeds,
     fetchItems,
+    searchItems,
     loadMoreItems,
     addFeed,
     deleteFeed,

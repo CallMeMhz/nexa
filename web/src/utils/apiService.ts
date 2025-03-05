@@ -13,6 +13,7 @@ interface FetchItemsParams {
   refresh?: boolean;
   page?: number;
   size?: number;
+  q?: string;
 }
 
 // 获取所有 feeds
@@ -51,7 +52,7 @@ export const deleteFeed = async (feedId: string): Promise<boolean> => {
 };
 
 export const fetchItems = async (params: FetchItemsParams): Promise<ItemsResponse> => {
-  const { feed_id, unread, starred, liked, today, refresh, page, size } = params;
+  const { feed_id, unread, starred, liked, today, refresh, page, size, q } = params;
   
   const urlParams = new URLSearchParams();
   if (unread !== undefined) urlParams.append('unread', unread.toString());
@@ -61,6 +62,7 @@ export const fetchItems = async (params: FetchItemsParams): Promise<ItemsRespons
   if (refresh !== undefined) urlParams.append('refresh', refresh.toString());
   if (page !== undefined) urlParams.append('page', page.toString());
   if (size !== undefined) urlParams.append('size', size.toString());
+  if (q !== undefined && q !== '') urlParams.append('q', q);
   
   let effectiveFeedId = feed_id;
   if (["unread", "starred", "liked", "today"].includes(feed_id)) {
@@ -68,6 +70,30 @@ export const fetchItems = async (params: FetchItemsParams): Promise<ItemsRespons
   }
   
   const data = await fetchClient<{ items: Item[], pagination: any }>(`/api/feed/${effectiveFeedId}?${urlParams.toString()}`, {
+    headers: getAuthHeaders()
+  });
+  
+  // 处理 items 数据
+  const items = data.items.map((item: Item) => ({
+    ...item,
+    read: item.read !== undefined ? item.read : false,
+    description: item.description || ""
+  }));
+
+  return {
+    items,
+    pagination: data.pagination || { total: items.length, page: 1, size: items.length }
+  };
+};
+
+// 搜索 items
+export const searchItems = async (query: string, page: number = 1, size: number = 10): Promise<ItemsResponse> => {
+  const urlParams = new URLSearchParams();
+  urlParams.append('q', query);
+  urlParams.append('page', page.toString());
+  urlParams.append('size', size.toString());
+  
+  const data = await fetchClient<{ items: Item[], pagination: any }>(`/api/search?${urlParams.toString()}`, {
     headers: getAuthHeaders()
   });
   

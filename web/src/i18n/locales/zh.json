@@ -49,5 +49,11 @@
     "cron": "更新计划",
     "refresh": "刷新",
     "deleteConfirm": "确定要删除这个订阅吗？"
+  },
+  "search": {
+    "placeholder": "搜索文章...",
+    "noResults": "没有找到相关结果",
+    "searching": "搜索中...",
+    "results": "搜索结果"
   }
 } 

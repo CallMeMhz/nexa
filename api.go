@@ -37,6 +37,7 @@ func (svc *Service) listen(addr string) {
 		apiGroup.POST("/feed", svc.AddFeed)
 		apiGroup.DELETE("/feed/:feed_id", svc.DeleteFeed)
 
+		apiGroup.GET("/search", svc.SearchItems)
 		apiGroup.GET("/item/:item_id", svc.GetItem)
 		apiGroup.PATCH("/item/:item_id", svc.UpdateItem)
 	}
@@ -355,4 +356,58 @@ func (svc *Service) Login(c *gin.Context) {
 // AuthStatus 返回当前的认证状态
 func (svc *Service) AuthStatus(c *gin.Context) {
 	c.JSON(200, gin.H{"auth_required": authConfig.Enabled})
+}
+
+// SearchItems 搜索文章
+func (svc *Service) SearchItems(c *gin.Context) {
+	ctx := c.Request.Context()
+	query := c.Query("q")
+
+	if query == "" {
+		c.JSON(400, gin.H{"error": "search query required"})
+		return
+	}
+
+	page, err := strconv.Atoi(c.Query("page"))
+	if err != nil {
+		page = 1
+	}
+	if page < 1 {
+		page = 1
+	}
+	size, err := strconv.Atoi(c.Query("size"))
+	if err != nil {
+		size = 10
+	}
+	if size < 1 {
+		size = 10
+	}
+	offset := (page - 1) * size
+
+	filter := &ItemFilter{
+		SearchQuery: &query,
+		Limit:       &size,
+		Offset:      &offset,
+	}
+
+	total, err := svc.db.CountItems(ctx, filter)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	items, err := svc.db.FilterItems(ctx, filter)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"items": items,
+		"pagination": gin.H{
+			"total": total,
+			"page":  getPageFromOffset(filter.Offset, filter.Limit),
+			"size":  getPageSize(filter.Limit),
+		},
+	})
 }

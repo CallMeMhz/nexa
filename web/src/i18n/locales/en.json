@@ -49,5 +49,11 @@
     "cron": "Update Schedule",
     "refresh": "Refresh",
     "deleteConfirm": "Are you sure you want to delete this feed?"
+  },
+  "search": {
+    "placeholder": "Search articles...",
+    "noResults": "No results found",
+    "searching": "Searching...",
+    "results": "Search results"
   }
 } 

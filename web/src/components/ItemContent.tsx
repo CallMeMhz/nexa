@@ -12,6 +12,7 @@ interface Props {
 const ItemContent = ({ item, onToggleRead, onToggleStar, onToggleLike }: Props) => {
   const { t } = useTranslation();
   const currentItemIdRef = useRef<string | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     // 如果有新的文章被选中
@@ -22,6 +23,11 @@ const ItemContent = ({ item, onToggleRead, onToggleStar, onToggleLike }: Props) 
       // 如果文章未读，自动标记为已读
       if (!item.read && onToggleRead) {
         onToggleRead(item, true);
+      }
+      
+      // 滚动内容区域回到顶部
+      if (contentRef.current) {
+        contentRef.current.scrollTop = 0;
       }
     }
   }, [item, onToggleRead]);
@@ -58,13 +64,13 @@ const ItemContent = ({ item, onToggleRead, onToggleStar, onToggleLike }: Props) 
   }
 
   return (
-    <div className="flex-1 p-8 bg-white overflow-y-auto flex justify-center">
+    <div className="flex-1 bg-white flex flex-col h-full">
       {/* 添加自定义样式 */}
       <style>{contentStyle}</style>
       
-      {/* 使用一个容器来限制内容宽度 */}
-      <div className="w-full max-w-3xl">
-        <div className="flex flex-col mb-4">
+      {/* 固定的顶部区域 */}
+      <div className="p-6 shadow-sm flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+        <div className="flex flex-col max-w-3xl mx-auto">
           <div className="mb-2">
             {item.link ? (
               <a href={item.link} target="_blank" rel="noopener noreferrer" className="no-underline">
@@ -146,23 +152,28 @@ const ItemContent = ({ item, onToggleRead, onToggleStar, onToggleLike }: Props) 
             )}
           </div>
         </div>
+      </div>
 
-        <div className="border-t border-gray-100 pt-4">
-          {item.description && !item.content && (
-            <p className="text-gray-600 mb-4" dangerouslySetInnerHTML={{ __html: item.description }} />
-          )}
-          
-          {item.image && (
-            <img 
-              src={item.image} 
-              alt="" 
-              className="max-w-full h-auto max-h-96 mb-4 rounded mx-auto object-contain" 
+      {/* 可滚动的内容区域 */}
+      <div ref={contentRef} className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-3xl mx-auto">
+          <div className="pt-2">
+            {item.description && !item.content && (
+              <p className="text-gray-600 mb-4" dangerouslySetInnerHTML={{ __html: item.description }} />
+            )}
+            
+            {item.image && (
+              <img 
+                src={item.image} 
+                alt="" 
+                className="max-w-full h-auto max-h-96 mb-4 rounded mx-auto object-contain" 
+              />
+            )}
+            <div 
+              className="prose max-w-none text-base leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: item.content }}
             />
-          )}
-          <div 
-            className="prose max-w-none text-base leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: item.content }}
-          />
+          </div>
         </div>
       </div>
     </div>

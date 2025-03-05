@@ -6,15 +6,16 @@ import (
 )
 
 type ItemFilter struct {
-	FeedIDs []string
-	Tags    []string
-	PubDate *time.Time
-	Unread  *bool
-	Starred *bool
-	Liked   *bool
-	SortBy  *string
-	Limit   *int
-	Offset  *int
+	FeedIDs     []string
+	Tags        []string
+	PubDate     *time.Time
+	Unread      *bool
+	Starred     *bool
+	Liked       *bool
+	SortBy      *string
+	Limit       *int
+	Offset      *int
+	SearchQuery *string
 }
 
 type DB interface {
