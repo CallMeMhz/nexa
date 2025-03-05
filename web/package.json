@@ -30,7 +30,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "dev": "REACT_APP_BACKEND_URL='http://192.168.5.14:7766' pnpm start",
+    "dev": "REACT_APP_BACKEND_URL='http://localhost:7766' pnpm start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

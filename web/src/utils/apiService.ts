@@ -2,7 +2,7 @@ import { Feed, Item, ItemsResponse } from '../types';
 import { getAuthHeaders } from './authService';
 import { fetchClient } from './fetchClient';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:7766';
+const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 interface FetchItemsParams {
   feed_id: string;
@@ -18,7 +18,7 @@ interface FetchItemsParams {
 
 // 获取所有 feeds
 export const fetchFeeds = async (): Promise<Feed[]> => {
-  const data = await fetchClient<{ feeds: Feed[] }>('/api/feeds', {
+  const data = await fetchClient<{ feeds: Feed[] }>(`${API_URL}/api/feeds`, {
     headers: getAuthHeaders()
   });
   return data.feeds;
@@ -26,7 +26,7 @@ export const fetchFeeds = async (): Promise<Feed[]> => {
 
 // 添加新 feed
 export const addFeed = async (url: string, cron: string, desc?: string): Promise<Feed> => {
-  const data = await fetchClient<{ feed: Feed }>('/api/feed', {
+  const data = await fetchClient<{ feed: Feed }>(`${API_URL}/api/feed`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ export const addFeed = async (url: string, cron: string, desc?: string): Promise
 // 删除 feed
 export const deleteFeed = async (feedId: string): Promise<boolean> => {
   try {
-    await fetchClient<{ success: boolean }>(`/api/feed/${feedId}`, {
+    await fetchClient<{ success: boolean }>(`${API_URL}/api/feed/${feedId}`, {
       method: 'DELETE',
       headers: getAuthHeaders()
     });
@@ -69,7 +69,7 @@ export const fetchItems = async (params: FetchItemsParams): Promise<ItemsRespons
     effectiveFeedId = "all";
   }
   
-  const data = await fetchClient<{ items: Item[], pagination: any }>(`/api/feed/${effectiveFeedId}?${urlParams.toString()}`, {
+  const data = await fetchClient<{ items: Item[], pagination: any }>(`${API_URL}/api/feed/${effectiveFeedId}?${urlParams.toString()}`, {
     headers: getAuthHeaders()
   });
   
@@ -93,7 +93,7 @@ export const searchItems = async (query: string, page: number = 1, size: number 
   urlParams.append('page', page.toString());
   urlParams.append('size', size.toString());
   
-  const data = await fetchClient<{ items: Item[], pagination: any }>(`/api/search?${urlParams.toString()}`, {
+  const data = await fetchClient<{ items: Item[], pagination: any }>(`${API_URL}/api/search?${urlParams.toString()}`, {
     headers: getAuthHeaders()
   });
   
@@ -112,7 +112,7 @@ export const searchItems = async (query: string, page: number = 1, size: number 
 
 // 获取 item
 export const getItem = async (itemId: string): Promise<Item> => {
-  const data = await fetchClient<{ item: Item }>(`/api/item/${itemId}`, {
+  const data = await fetchClient<{ item: Item }>(`${API_URL}/api/item/${itemId}`, {
     headers: getAuthHeaders()
   });
   return data.item;
@@ -125,7 +125,7 @@ export const updateItemStatus = async (
   value: boolean
 ): Promise<boolean> => {
   try {
-    await fetchClient<{ success: boolean }>(`/api/item/${itemId}`, {
+    await fetchClient<{ success: boolean }>(`${API_URL}/api/item/${itemId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -142,7 +142,7 @@ export const updateItemStatus = async (
 
 // 更新 feed
 export const updateFeed = async (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean): Promise<Feed> => {
-  const data = await fetchClient<{ feed: Feed }>(`/api/feed/${feedId}`, {
+  const data = await fetchClient<{ feed: Feed }>(`${API_URL}/api/feed/${feedId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
