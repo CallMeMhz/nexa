@@ -2,7 +2,7 @@ build:
 	cd web && pnpm build
 
 server:
-	CGO_ENABLED=1 NEXA_PASSWORD=nexa go run .
+	CGO_ENABLED=1 NEXA_PASSWORD=nexa NEXA_SECRET=sosecretaf go run .
 
 webui:
 	cd web && pnpm start
