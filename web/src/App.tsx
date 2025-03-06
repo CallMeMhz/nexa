@@ -35,8 +35,8 @@ function App() {
   } = useFeedManager();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [feedToDelete, setFeedToDelete] = useState<Feed | null>(null);
+  const [mobileView, setMobileView] = useState<'feeds' | 'items' | 'content'>('feeds');
 
   // 跟踪前一个认证状态
   const prevAuthRef = useRef(false);
@@ -87,11 +87,6 @@ function App() {
     setShowLoginSuccess(true);
   }, [login]);
 
-  // 处理删除按钮点击 - 显示确认对话框
-  const handleDeleteClick = (feed: Feed) => {
-    setFeedToDelete(feed);
-    setIsDeleteModalOpen(true);
-  };
 
   // 直接删除 feed，不显示确认对话框
   const handleDirectDelete = async (feedId: string) => {
@@ -102,12 +97,6 @@ function App() {
   const handleAddFeed = async (url: string, cron: string, desc?: string) => {
     await addFeed(url, cron, desc);
     setIsAddModalOpen(false);
-  };
-
-  // 处理删除 feed 确认
-  const handleDeleteFeed = async (feedId: string) => {
-    await deleteFeed(feedId);
-    setIsDeleteModalOpen(false);
   };
 
   // 处理标记已读/未读
@@ -135,6 +124,29 @@ function App() {
     await updateFeed(feedId, url, cron, desc, suspended);
   };
 
+  // 处理选择 feed 时的移动端视图切换
+  const handleSelectFeed = (feed: Feed) => {
+    setSelectedFeed(feed);
+    // 在移动端选择 feed 后，自动切换到 items 视图
+    setMobileView('items');
+  };
+
+  // 处理选择 item 时的移动端视图切换
+  const handleSelectItem = (item: any) => {
+    setSelectedItem(item);
+    // 在移动端选择 item 后，自动切换到 content 视图
+    setMobileView('content');
+  };
+
+  // 处理移动端返回按钮
+  const handleMobileBack = () => {
+    if (mobileView === 'content') {
+      setMobileView('items');
+    } else if (mobileView === 'items') {
+      setMobileView('feeds');
+    }
+  };
+
   // 如果认证状态正在加载，显示加载中
   if (authLoading) {
     return (
@@ -151,51 +163,97 @@ function App() {
 
   // 已认证或不需要认证，显示主界面
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
       <AuthExpiredNotification />
       <LoginSuccessNotification 
         visible={showLoginSuccess}
         onClose={() => setShowLoginSuccess(false)}
       />
-      <FeedList 
-        feeds={feeds} 
-        selectedFeed={selectedFeed}
-        onSelectFeed={setSelectedFeed}
-        onAddClick={() => setIsAddModalOpen(true)}
-        showLogout={authState.isAuthenticated}
-        onLogout={logout}
-      />
-      <ItemList 
-        items={items}
-        feed={selectedFeed}
-        selectedItem={selectedItem}
-        onSelectItem={setSelectedItem}
-        onRefresh={(feed_id, unread, refresh) => fetchItems({feed_id, unread, refresh})}
-        isLoading={isLoading}
-        onDeleteClick={handleDeleteClick}
-        onDirectDelete={handleDirectDelete}
-        onUpdateFeed={handleUpdateFeed}
-        feeds={feeds}
-        pagination={pagination}
-        onLoadMore={loadMoreItems}
-        onSearch={handleSearch}
-      />
-      <ItemContent 
-        item={selectedItem} 
-        onToggleRead={handleToggleRead}
-        onToggleStar={handleToggleStar}
-        onToggleLike={handleToggleLike}
-      />
+      
+      {/* 移动端顶部导航栏 */}
+      <div className="md:hidden flex items-center justify-between bg-white border-b border-gray-200 p-2">
+        <div className="flex items-center">
+          {mobileView !== 'feeds' && (
+            <button 
+              onClick={handleMobileBack}
+              className="mr-2 p-2 text-gray-600 hover:text-gray-800"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
+          <div className="flex items-center">
+            <div className="relative">
+              <h2 className="text-xl font-extrabold tracking-tight">
+                <span className="text-blue-600">N</span>
+                <span className="text-gray-800">exa</span>
+              </h2>
+              <div className="absolute -top-1 -right-1.5 w-2 h-2 bg-purple-500 rounded-full"></div>
+            </div>
+            <div className="ml-1.5 flex items-center justify-center px-1.5 py-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded text-xs font-medium text-white">
+              RSS
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center">
+          {mobileView === 'feeds' && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+      
+      {/* Feed 列表 - 在移动端根据视图状态显示/隐藏 */}
+      <div id="feed-list" className={`${mobileView === 'feeds' ? 'block' : 'hidden'} md:block md:w-64 bg-white border-r border-gray-200 md:flex-shrink-0 h-full md:h-screen overflow-y-auto`}>
+        <FeedList 
+          feeds={feeds} 
+          selectedFeed={selectedFeed}
+          onSelectFeed={handleSelectFeed}
+          onAddClick={() => setIsAddModalOpen(true)}
+          showLogout={authState.isAuthenticated}
+          onLogout={logout}
+        />
+      </div>
+      
+      {/* Item 列表 - 在移动端根据视图状态显示/隐藏 */}
+      <div id="item-list" className={`${mobileView === 'items' ? 'block' : 'hidden'} md:block md:w-96 bg-white border-r border-gray-200 md:flex-shrink-0 h-full md:h-screen overflow-y-auto`}>
+        <ItemList 
+          items={items}
+          feed={selectedFeed}
+          selectedItem={selectedItem}
+          onSelectItem={handleSelectItem}
+          onRefresh={(feed_id, unread, refresh) => fetchItems({feed_id, unread, refresh})}
+          isLoading={isLoading}
+          onDirectDelete={handleDirectDelete}
+          onUpdateFeed={handleUpdateFeed}
+          feeds={feeds}
+          pagination={pagination}
+          onLoadMore={loadMoreItems}
+          onSearch={handleSearch}
+        />
+      </div>
+      
+      {/* Item 内容 - 在移动端根据视图状态显示/隐藏 */}
+      <div id="item-content" className={`${mobileView === 'content' ? 'block' : 'hidden'} md:block flex-grow h-full md:h-screen overflow-y-auto`}>
+        <ItemContent 
+          item={selectedItem} 
+          onToggleRead={handleToggleRead}
+          onToggleStar={handleToggleStar}
+          onToggleLike={handleToggleLike}
+        />
+      </div>
+      
       <AddFeedModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSubmit={handleAddFeed}
-      />
-      <DeleteFeedModal
-        isOpen={isDeleteModalOpen}
-        feed={feedToDelete}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDeleteFeed}
       />
     </div>
   );

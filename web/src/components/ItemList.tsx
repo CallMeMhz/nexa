@@ -12,7 +12,6 @@ interface Props {
   onSelectItem: (item: Item) => void;
   onRefresh: (feedID: string, unread: boolean, refresh: boolean) => void;
   isLoading: boolean;
-  onDeleteClick?: (feed: Feed) => void;
   onDirectDelete?: (feedId: string) => void;
   onUpdateFeed?: (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean) => void;
   feeds: Feed[];
@@ -28,7 +27,6 @@ const ItemList = ({
   onSelectItem, 
   onRefresh, 
   isLoading, 
-  onDeleteClick, 
   onDirectDelete,
   onUpdateFeed,
   feeds,
@@ -86,7 +84,7 @@ const ItemList = ({
   };
 
   return (
-    <div className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
+    <div className="bg-white border-r border-gray-200 flex flex-col h-full">
       {/* 固定的顶部区域 */}
       <div className="p-6 shadow-sm flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
         {/* 标题栏 - 显示当前源信息 */}

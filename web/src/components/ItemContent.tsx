@@ -57,7 +57,7 @@ const ItemContent = ({ item, onToggleRead, onToggleStar, onToggleLike }: Props) 
 
   if (!item) {
     return (
-      <div className="flex-1 p-8 bg-white flex items-center justify-center text-gray-400">
+      <div className="flex-1 p-8 bg-white flex h-full items-center justify-center text-gray-400">
         Select an item to read
       </div>
     );

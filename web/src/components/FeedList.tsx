@@ -25,8 +25,9 @@ const FeedList = ({
   const totalUnreadCount = feeds?.reduce((sum, feed) => sum + (feed.unread_count || 0), 0);
   
   return (
-    <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col h-full">
-      <div className="flex justify-between items-center mb-6">
+    <div className="h-full p-4 flex flex-col">
+      {/* 在桌面端显示标题，移动端已在App.tsx中显示 */}
+      <div className="hidden md:flex justify-between items-center mb-6">
         <div className="flex items-center">
           <div className="relative">
             <h2 className="text-xl font-extrabold tracking-tight">
@@ -194,15 +195,15 @@ const FeedList = ({
           <span className="font-medium">{t('settings.title')}</span>
           <div className="flex-grow mx-2 border-t border-gray-200"></div>
         </div>
-        
-        {/* 语言切换器 */}
-        <div className="mb-2 px-2">
+      </div>
+      
+      {/* 底部区域, TODO 用一排三个圆形控制按钮分别用于切换语言、切换主题和注销 */}
+      <div className="mt-auto pt-4">
+        <div className="mb-4">
           <LanguageSwitcher />
         </div>
-        
-        {/* 登出按钮 */}
         {showLogout && onLogout && (
-          <button 
+          <button
             onClick={onLogout}
             className="w-full flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-all duration-200"
             title={t('nav.logout')}
