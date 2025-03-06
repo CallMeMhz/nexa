@@ -1,6 +1,6 @@
 import { logout } from './authService';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:7766';
+const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 // 全局事件，用于通知应用程序需要重新登录
 export const authEvents = {
