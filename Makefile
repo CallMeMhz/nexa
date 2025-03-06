@@ -5,7 +5,7 @@ server:
 	CGO_ENABLED=1 NEXA_PASSWORD=nexa NEXA_SECRET=sosecretaf go run .
 
 webui:
-	cd web && pnpm start
+	cd web && pnpm dev
 
 reset-db:
 	@echo "Cleaning up..."

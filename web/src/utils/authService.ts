@@ -1,7 +1,7 @@
 import { LoginResponse } from '../types';
 import { fetchClient } from './fetchClient';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:7766';
+const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 const TOKEN_KEY = 'nexa_token';
 
 // 检查认证状态
