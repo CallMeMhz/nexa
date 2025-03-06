@@ -1,12 +1,11 @@
 services:
   nexa:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: callmemhz/nexa:latest
     ports:
       - "7766:7766"
     volumes:
       - ./data:/app/data
     environment:
+      - NEXA_SECRET_KEY=sosecretaf
       - NEXA_PASSWORD=nexa
     restart: unless-stopped 
