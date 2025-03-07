@@ -17,6 +17,7 @@ function App() {
   
   const {
     feeds,
+    tags,
     items,
     pagination,
     selectedFeed,
@@ -120,8 +121,8 @@ function App() {
   };
 
   // 处理更新 feed
-  const handleUpdateFeed = async (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean) => {
-    await updateFeed(feedId, url, cron, desc, suspended);
+  const handleUpdateFeed = async (feedId: string, url: string, cron: string, desc?: string, tags?: string[], suspended?: boolean) => {
+    await updateFeed(feedId, url, cron, desc, tags, suspended);
   };
 
   // 处理选择 feed 时的移动端视图切换
@@ -214,6 +215,7 @@ function App() {
       <div id="feed-list" className={`${mobileView === 'feeds' ? 'block' : 'hidden'} md:block md:w-64 bg-white border-r border-gray-200 md:flex-shrink-0 h-full md:h-screen overflow-y-auto`}>
         <FeedList 
           feeds={feeds} 
+          tags={tags}
           selectedFeed={selectedFeed}
           onSelectFeed={handleSelectFeed}
           onAddClick={() => setIsAddModalOpen(true)}

@@ -43,7 +43,7 @@ func (svc *Service) initCron() {
 			continue
 		}
 
-		go svc.fetch(ctx, feed.Feed) // fetch on start
+		go svc.fetch(ctx, feed.ID) // fetch on start
 		svc.subscribe(feed.Feed)
 	}
 	svc.cron.Start()
@@ -51,7 +51,7 @@ func (svc *Service) initCron() {
 
 func (svc *Service) subscribe(feed *Feed) {
 	if _, ok := svc.crons[feed.ID]; !ok {
-		entryID, _ := svc.cron.AddFunc(feed.Cron, func() { svc.fetch(context.Background(), feed) })
+		entryID, _ := svc.cron.AddFunc(feed.Cron, func() { svc.fetch(context.Background(), feed.ID) })
 		svc.crons[feed.ID] = entryID
 	}
 }
@@ -63,7 +63,12 @@ func (svc *Service) unsubscribe(feedID string) {
 	}
 }
 
-func (svc *Service) fetch(ctx context.Context, feed *Feed) error {
+func (svc *Service) fetch(ctx context.Context, feedID string) error {
+	feed, err := svc.db.GetFeed(ctx, feedID)
+	if err != nil {
+		return errors.Wrap(err, "get feed error")
+	}
+
 	logrus.Infof("fetch %s", feed.Link)
 	f, err := FetchFeed(ctx, feed)
 	if err != nil {
@@ -73,7 +78,7 @@ func (svc *Service) fetch(ctx context.Context, feed *Feed) error {
 
 	items := make([]*Item, 0, len(f.Items))
 	for _, raw := range f.Items {
-		id := Hash(fmt.Sprintf("%s:%s", raw.Link, raw.Published))
+		id := Hash(fmt.Sprintf("%s:%s", raw.Title, raw.Published))
 		item := &Item{
 			ID:          id,
 			FeedID:      feed.ID,
@@ -94,6 +99,7 @@ func (svc *Service) fetch(ctx context.Context, feed *Feed) error {
 	}
 
 	feed.LastBuildDate = f.UpdatedParsed
+	// FIXME: 更新部分字段就好，不然有可能发生 tags 被更新成老的的问题
 	if err := svc.db.SaveFeed(ctx, feed); err != nil {
 		return errors.Wrap(err, "update feed error")
 	}

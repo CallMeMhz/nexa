@@ -10,6 +10,11 @@ export interface Feed {
   suspended?: boolean;
 }
 
+export interface Tag {
+  name: string;
+  unread_count: number;
+}
+
 export interface Item {
   id: string;
   feed_id: string;

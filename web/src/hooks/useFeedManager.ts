@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Feed, Item, Pagination } from '../types';
+import { Feed, Item, Pagination, Tag } from '../types';
 import * as apiService from '../utils/apiService';
 
 export const useFeedManager = () => {
   const [feeds, setFeeds] = useState<Feed[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, size: 10 });
   const [selectedFeed, setSelectedFeed] = useState<Feed>({id: "all", title: "All"} as Feed);
@@ -15,8 +16,9 @@ export const useFeedManager = () => {
   const fetchFeeds = useCallback(async () => {
     setIsLoading(true);
     try {
-      const fetchedFeeds = await apiService.fetchFeeds();
-      setFeeds(fetchedFeeds);
+      const { feeds, tags } = await apiService.fetchFeeds();
+      setFeeds(feeds);
+      setTags(tags);
     } catch (error) {
       console.error('Failed to fetch feeds:', error);
     } finally {
@@ -27,6 +29,7 @@ export const useFeedManager = () => {
   // 获取 items
   const fetchItems = useCallback(async (params: {
     feed_id: string,
+    tags?: string[],
     unread?: boolean,
     starred?: boolean,
     liked?: boolean,
@@ -62,6 +65,7 @@ export const useFeedManager = () => {
         
         const response = await apiService.fetchItems({
           feed_id: selectedFeed.id, 
+          tags: selectedFeed.tags,
           unread, 
           starred, 
           liked, 
@@ -74,7 +78,24 @@ export const useFeedManager = () => {
         setPagination(response.pagination);
       } else {
         // 执行搜索
-        const response = await apiService.searchItems(query);
+        // 使用 fetchItems 而不是 searchItems API，以便保持在当前 feed 的上下文中搜索
+        const unread = selectedFeed.id === "unread" ? true : undefined;
+        const starred = selectedFeed.id === "starred" ? true : undefined;
+        const liked = selectedFeed.id === "liked" ? true : undefined;
+        const today = selectedFeed.id === "today" ? true : undefined;
+        
+        const response = await apiService.fetchItems({
+          feed_id: selectedFeed.id,
+          tags: selectedFeed.tags,
+          unread,
+          starred,
+          liked,
+          today,
+          page: 1,
+          size: 10,
+          q: query
+        });
+        
         setItems(response.items);
         setPagination(response.pagination);
       }
@@ -175,12 +196,14 @@ export const useFeedManager = () => {
         
         response = await apiService.fetchItems({
           feed_id: selectedFeed.id, 
+          tags: selectedFeed.tags,
           unread, 
           starred, 
           liked, 
           today,
           page: nextPage,
-          size: pagination.size
+          size: pagination.size,
+          q: searchQuery || undefined  // 确保在加载更多时也带上搜索查询
         });
       }
       
@@ -195,9 +218,9 @@ export const useFeedManager = () => {
   }, [isLoading, pagination, selectedFeed, searchQuery]);
 
   // 更新 feed
-  const updateFeed = useCallback(async (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean) => {
+  const updateFeed = useCallback(async (feedId: string, url: string, cron: string, desc?: string, tags?: string[], suspended?: boolean) => {
     try {
-      const updatedFeed = await apiService.updateFeed(feedId, url, cron, desc, suspended);
+      const updatedFeed = await apiService.updateFeed(feedId, url, cron, desc, tags, suspended);
       await fetchFeeds();
       
       // 如果当前选中的是被更新的 feed，则更新选中的 feed
@@ -208,7 +231,6 @@ export const useFeedManager = () => {
       return updatedFeed;
     } catch (error) {
       console.error('Failed to update feed:', error);
-      throw error;
     }
   }, [fetchFeeds, selectedFeed]);
 
@@ -226,11 +248,12 @@ export const useFeedManager = () => {
     const starred = selectedFeed.id === "starred" ? true : undefined;
     const liked = selectedFeed.id === "liked" ? true : undefined;
     const today = selectedFeed.id === "today" ? true : undefined;
-    fetchItems({feed_id: selectedFeed.id, unread, starred, liked, today, page: 1, size: 10});
+    fetchItems({feed_id: selectedFeed.id, tags: selectedFeed.tags, unread, starred, liked, today, page: 1, size: 10});
   }, [selectedFeed, fetchItems]);
 
   return {
     feeds,
+    tags,
     items,
     pagination,
     selectedFeed,

@@ -41,7 +41,24 @@ func FetchFeed(ctx context.Context, feed *Feed) (*gofeed.Feed, error) {
 	}
 	defer resp.Body.Close()
 
-	return gofeed.NewParser().Parse(resp.Body)
+	// return gofeed.NewParser().Parse(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return gofeed.NewParser().ParseString(string(sanitizeXML(body)))
+}
+
+func sanitizeXML(content []byte) []byte {
+	// Remove ASCII control characters except for whitespace
+	sanitized := make([]byte, 0, len(content))
+	for _, b := range content {
+		if b >= 32 || b == 9 || b == 10 || b == 13 {
+			sanitized = append(sanitized, b)
+		}
+	}
+	return sanitized
 }
 
 // FetchItemContent fetches the content for a specific item from its original link

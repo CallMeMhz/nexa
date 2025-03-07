@@ -48,6 +48,8 @@
     "url": "订阅链接",
     "title": "标题",
     "description": "描述",
+    "tags": "标签",
+    "tagsPlaceholder": "添加标签（按空格添加）",
     "cron": "更新计划",
     "refresh": "刷新",
     "deleteConfirm": "确定要删除这个订阅吗？",

@@ -7,10 +7,10 @@ import (
 type Feed struct {
 	ID string `gorm:"primaryKey" json:"id"`
 
-	Title         string `yaml:"title" json:"title"`
-	Desc          string `yaml:"desc" json:"desc"`
-	Link          string `yaml:"link" json:"link"`
-	Tags          string `yaml:"tags" json:"tags"`
+	Title         string   `yaml:"title" json:"title"`
+	Desc          string   `yaml:"desc" json:"desc"`
+	Link          string   `yaml:"link" json:"link"`
+	Tags          []string `gorm:"-" yaml:"tags" json:"tags"`
 	LastBuildDate *time.Time
 
 	Cron      string `yaml:"cron" json:"cron"`
@@ -50,3 +50,10 @@ type Item struct {
 }
 
 func (item *Item) TableName() string { return "items" }
+
+type Tag struct {
+	FeedID string `gorm:"primaryKey" json:"feed_id"`
+	Name   string `gorm:"primaryKey" json:"name"`
+}
+
+func (tag *Tag) TableName() string { return "tags" }

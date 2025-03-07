@@ -6,7 +6,7 @@ interface Props {
   isOpen: boolean;
   feed: Feed | null;
   onClose: () => void;
-  onSubmit: (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean) => void;
+  onSubmit: (feedId: string, url: string, cron: string, desc?: string, tags?: string[], suspended?: boolean) => void;
   onDelete: (feedId: string) => void;
 }
 
@@ -15,6 +15,8 @@ const EditFeedModal = ({ isOpen, feed, onClose, onSubmit, onDelete }: Props) => 
   const [url, setUrl] = useState('');
   const [cron, setCron] = useState('');
   const [desc, setDesc] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [suspended, setSuspended] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState(false);
@@ -26,6 +28,7 @@ const EditFeedModal = ({ isOpen, feed, onClose, onSubmit, onDelete }: Props) => 
       setUrl(feed.link || '');
       setCron(feed.cron || '@every 30m'); // Default cron if not available
       setDesc(feed.desc || '');
+      setTags(feed.tags || []);
       setSuspended(feed.suspended || false);
       setDeleteConfirmation(false);
     }
@@ -39,11 +42,54 @@ const EditFeedModal = ({ isOpen, feed, onClose, onSubmit, onDelete }: Props) => 
 
   if (!isOpen || !feed) return null;
 
+  const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // 检查输入是否包含空格或逗号
+    if (value.includes(' ') || value.includes(',')) {
+      // 分割输入并过滤空字符串
+      const newTags = value.split(/[\s,]+/).filter(tag => tag.trim() !== '');
+      
+      // 添加新标签（排除已存在的）
+      if (newTags.length > 0) {
+        const lastTag = newTags[newTags.length - 1];
+        if (lastTag && !tags.includes(lastTag)) {
+          setTags([...tags, lastTag]);
+        }
+      }
+      
+      // 清空输入框
+      setTagInput('');
+    } else {
+      setTagInput(value);
+    }
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // 处理回车键添加标签
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault();
+      const newTag = tagInput.trim();
+      if (!tags.includes(newTag)) {
+        setTags([...tags, newTag]);
+      }
+      setTagInput('');
+    } 
+    // 处理退格键删除最后一个标签
+    else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+      setTags(tags.slice(0, -1));
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await onSubmit(feed.id, url, cron, desc || undefined, suspended);
+      await onSubmit(feed.id, url, cron, desc, tags, suspended);
       onClose();
     } catch (error) {
       console.error('Error updating feed:', error);
@@ -85,6 +131,31 @@ const EditFeedModal = ({ isOpen, feed, onClose, onSubmit, onDelete }: Props) => 
               onChange={(e) => setDesc(e.target.value)}
               className="w-full p-2 border rounded"
             />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">{t('feed.tags')} ({t('common.optional')})</label>
+            <div className="flex flex-wrap items-center p-2 border rounded">
+              {tags.map((tag, index) => (
+                <div key={index} className="flex items-center bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-sm mr-2 mb-2">
+                  <span>{tag}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
+                  >
+                    &times;
+                  </button>
+                </div>
+              ))}
+              <input
+                type="text"
+                value={tagInput}
+                onChange={handleTagInputChange}
+                onKeyDown={handleTagInputKeyDown}
+                className="flex-grow p-1 focus:outline-none"
+                placeholder={tags.length === 0 ? t('feed.tagsPlaceholder') || "Add tags (press space to add)" : ""}
+              />
+            </div>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">{t('feed.cron')}</label>

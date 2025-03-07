@@ -38,7 +38,6 @@ func (svc *Service) listen(addr string) {
 		apiGroup.PUT("/feed/:feed_id", svc.UpdateFeed)
 		apiGroup.DELETE("/feed/:feed_id", svc.DeleteFeed)
 
-		apiGroup.GET("/search", svc.SearchItems)
 		apiGroup.GET("/item/:item_id", svc.GetItem)
 		apiGroup.PATCH("/item/:item_id", svc.UpdateItem)
 	}
@@ -64,10 +63,11 @@ func (svc *Service) AddFeed(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	req := new(struct {
-		Url       string `json:"url"`
-		Desc      string `json:"desc"`
-		Cron      string `json:"cron"`
-		Suspended bool   `json:"suspended"`
+		Url       string   `json:"url"`
+		Desc      string   `json:"desc"`
+		Cron      string   `json:"cron"`
+		Suspended bool     `json:"suspended"`
+		Tags      []string `json:"tags"`
 	})
 	if err := c.BindJSON(req); err != nil {
 		logrus.WithError(err).Warn("invalid request")
@@ -90,6 +90,7 @@ func (svc *Service) AddFeed(c *gin.Context) {
 		Desc:      req.Desc,
 		Cron:      req.Cron,
 		Suspended: req.Suspended,
+		Tags:      req.Tags,
 	}
 
 	if err := svc.db.SaveFeed(ctx, feed); err != nil {
@@ -99,7 +100,7 @@ func (svc *Service) AddFeed(c *gin.Context) {
 
 	if !feed.Suspended {
 		svc.subscribe(feed)
-		if err := svc.fetch(ctx, feed); err != nil {
+		if err := svc.fetch(ctx, feed.ID); err != nil {
 			logrus.WithField("feed_id", feed.ID).WithError(err).Error("fetch feed error")
 		}
 	}
@@ -112,10 +113,11 @@ func (svc *Service) UpdateFeed(c *gin.Context) {
 	feedID := c.Param("feed_id")
 
 	req := new(struct {
-		Url       string `json:"url"`
-		Desc      string `json:"desc"`
-		Cron      string `json:"cron"`
-		Suspended bool   `json:"suspended"`
+		Url       string   `json:"url"`
+		Desc      string   `json:"desc"`
+		Cron      string   `json:"cron"`
+		Tags      []string `json:"tags"`
+		Suspended bool     `json:"suspended"`
 	})
 	if err := c.BindJSON(req); err != nil {
 		logrus.WithError(err).Warn("invalid request")
@@ -132,6 +134,7 @@ func (svc *Service) UpdateFeed(c *gin.Context) {
 	feed.Link = req.Url
 	feed.Desc = req.Desc
 	feed.Cron = req.Cron
+	feed.Tags = req.Tags
 	feed.Suspended = req.Suspended
 
 	if err := svc.db.SaveFeed(ctx, feed); err != nil {
@@ -165,20 +168,26 @@ func (svc *Service) DeleteFeed(c *gin.Context) {
 func (svc *Service) ListAllFeeds(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	tags := c.QueryArray("tags")
-	feeds, err := svc.db.FilterFeeds(ctx, tags)
+	feeds, err := svc.db.FilterFeeds(ctx, []string{})
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(200, gin.H{"feeds": feeds})
+	tags, err := svc.db.ListTags(ctx)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"feeds": feeds, "tags": tags})
 }
 
 func (svc *Service) ListAllItems(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	feedsResult, err := svc.db.FilterFeeds(ctx, []string{})
+	tags := c.QueryArray("tags")
+	feedsResult, err := svc.db.FilterFeeds(ctx, tags)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -205,15 +214,16 @@ func (svc *Service) ListFeedItems(c *gin.Context) {
 
 func (svc *Service) listItems(c *gin.Context, feeds ...*Feed) {
 	ctx := c.Request.Context()
+	unread := c.Query("unread") == "true"
 	today := c.Query("today") == "true"
 	starred := c.Query("starred") == "true"
 	liked := c.Query("liked") == "true"
-
+	query := c.Query("q")
 	refresh := c.Query("refresh") == "true"
 
 	if refresh {
 		for _, feed := range feeds {
-			if err := svc.fetch(ctx, feed); err != nil {
+			if err := svc.fetch(ctx, feed.ID); err != nil {
 				logrus.WithField("feed_id", feed.ID).WithError(err).Error("refresh feed error")
 			}
 		}
@@ -241,7 +251,7 @@ func (svc *Service) listItems(c *gin.Context, feeds ...*Feed) {
 	filter.Limit = &size
 	filter.Offset = &offset
 
-	if unread := c.Query("unread") == "true"; unread {
+	if unread {
 		filter.Unread = &unread
 	}
 	if starred {
@@ -254,6 +264,9 @@ func (svc *Service) listItems(c *gin.Context, feeds ...*Feed) {
 		now := time.Now()
 		todayTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).UTC()
 		filter.PubDate = &todayTime
+	}
+	if query != "" {
+		filter.SearchQuery = &query
 	}
 
 	total, err := svc.db.CountItems(ctx, filter)
@@ -403,58 +416,4 @@ func (svc *Service) Login(c *gin.Context) {
 // AuthStatus 返回当前的认证状态
 func (svc *Service) AuthStatus(c *gin.Context) {
 	c.JSON(200, gin.H{"auth_required": authConfig.Enabled})
-}
-
-// SearchItems 搜索文章
-func (svc *Service) SearchItems(c *gin.Context) {
-	ctx := c.Request.Context()
-	query := c.Query("q")
-
-	if query == "" {
-		c.JSON(400, gin.H{"error": "search query required"})
-		return
-	}
-
-	page, err := strconv.Atoi(c.Query("page"))
-	if err != nil {
-		page = 1
-	}
-	if page < 1 {
-		page = 1
-	}
-	size, err := strconv.Atoi(c.Query("size"))
-	if err != nil {
-		size = 10
-	}
-	if size < 1 {
-		size = 10
-	}
-	offset := (page - 1) * size
-
-	filter := &ItemFilter{
-		SearchQuery: &query,
-		Limit:       &size,
-		Offset:      &offset,
-	}
-
-	total, err := svc.db.CountItems(ctx, filter)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-
-	items, err := svc.db.FilterItems(ctx, filter)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"items": items,
-		"pagination": gin.H{
-			"total": total,
-			"page":  getPageFromOffset(filter.Offset, filter.Limit),
-			"size":  getPageSize(filter.Limit),
-		},
-	})
 }

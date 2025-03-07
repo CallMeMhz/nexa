@@ -1,4 +1,4 @@
-import { Feed, Item, ItemsResponse } from '../types';
+import { Feed, Item, ItemsResponse, Tag } from '../types';
 import { getAuthHeaders } from './authService';
 import { fetchClient } from './fetchClient';
 
@@ -6,6 +6,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 interface FetchItemsParams {
   feed_id: string;
+  tags?: string[];
   unread?: boolean;
   starred?: boolean;
   liked?: boolean;
@@ -16,23 +17,22 @@ interface FetchItemsParams {
   q?: string;
 }
 
-// 获取所有 feeds
-export const fetchFeeds = async (): Promise<Feed[]> => {
-  const data = await fetchClient<{ feeds: Feed[] }>(`${API_URL}/api/feeds`, {
+export const fetchFeeds = async (): Promise<{ feeds: Feed[], tags: Tag[] }> => {
+  const data = await fetchClient<{ feeds: Feed[], tags: Tag[] }>(`${API_URL}/api/feeds`, {
     headers: getAuthHeaders()
   });
-  return data.feeds;
+  return data;
 };
 
 // 添加新 feed
-export const addFeed = async (url: string, cron: string, desc?: string): Promise<Feed> => {
+export const addFeed = async (url: string, cron: string, desc?: string, tags?: string[]): Promise<Feed> => {
   const data = await fetchClient<{ feed: Feed }>(`${API_URL}/api/feed`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders()
     },
-    body: JSON.stringify({ url, cron, desc }),
+    body: JSON.stringify({ url, cron, desc, tags }),
   });
   return data.feed;
 };
@@ -51,10 +51,18 @@ export const deleteFeed = async (feedId: string): Promise<boolean> => {
   }
 };
 
+export const fetchTags = async (): Promise<string[]> => {
+  const data = await fetchClient<{ tags: string[] }>(`${API_URL}/api/tags`, {
+    headers: getAuthHeaders()
+  });
+  return data.tags;
+};
+
 export const fetchItems = async (params: FetchItemsParams): Promise<ItemsResponse> => {
-  const { feed_id, unread, starred, liked, today, refresh, page, size, q } = params;
+  const { feed_id, tags, unread, starred, liked, today, refresh, page, size, q } = params;
   
   const urlParams = new URLSearchParams();
+  if (tags && tags.length > 0) tags.forEach(tag => urlParams.append('tags', tag));
   if (unread !== undefined) urlParams.append('unread', unread.toString());
   if (starred !== undefined) urlParams.append('starred', starred.toString());
   if (liked !== undefined) urlParams.append('liked', liked.toString());
@@ -141,14 +149,14 @@ export const updateItemStatus = async (
 };
 
 // 更新 feed
-export const updateFeed = async (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean): Promise<Feed> => {
+export const updateFeed = async (feedId: string, url: string, cron: string, desc?: string, tags?: string[], suspended?: boolean): Promise<Feed> => {
   const data = await fetchClient<{ feed: Feed }>(`${API_URL}/api/feed/${feedId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders()
     },
-    body: JSON.stringify({ url, cron, desc, suspended }),
+    body: JSON.stringify({ url, cron, desc, tags, suspended }),
   });
   return data.feed;
 }; 

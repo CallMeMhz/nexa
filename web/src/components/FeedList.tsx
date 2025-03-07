@@ -1,10 +1,11 @@
-import { Feed } from '../types';
+import { Feed, Tag } from '../types';
 import { getFaviconUrl, getFeedDisplayName } from '../utils/feedUtils';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
   feeds: Feed[];
+  tags: Tag[];
   selectedFeed: Feed | null;
   onSelectFeed: (feed: Feed) => void;
   onAddClick: () => void;
@@ -14,6 +15,7 @@ interface Props {
 
 const FeedList = ({ 
   feeds, 
+  tags,
   selectedFeed, 
   onSelectFeed, 
   onAddClick,
@@ -187,6 +189,36 @@ const FeedList = ({
             )}
           </li>
         ))}
+        {tags.length > 0 && (
+          <>
+            <li className="py-2">
+              <div className="border-t border-gray-200"></div>
+            </li>
+            <li className="px-2 py-1 text-xs text-gray-500 font-medium">
+              {t('nav.tags')}
+            </li>
+            {tags.map(tag => (
+              <li
+                key={tag.name}
+                className={`cursor-pointer p-2 rounded flex items-center hover:bg-gray-100`}
+                onClick={() => onSelectFeed({ id: "all", title: tag.name, desc: "", link: "", description: "", tags: [tag.name], unread_count: tag.unread_count } as Feed)}
+              >
+                <div className="w-5 h-5 mr-2 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="url(#tag-gradient)">
+                    <defs>
+                      <linearGradient id="tag-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#3B82F6" />
+                        <stop offset="100%" stopColor="#8B5CF6" />
+                      </linearGradient>
+                    </defs>
+                    <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="truncate">{tag.name}</span>
+              </li>
+            ))}
+          </>
+        )}
       </ul>
       
       {/* 设置部分 */}

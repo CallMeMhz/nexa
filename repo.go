@@ -24,6 +24,8 @@ type DB interface {
 	SaveFeed(ctx context.Context, feed *Feed) error
 	DeleteFeed(ctx context.Context, feedID string) error
 
+	ListTags(ctx context.Context) ([]*ListTagResult, error)
+
 	AddItem(ctx context.Context, items ...*Item) error
 	FilterItems(ctx context.Context, filter *ItemFilter) ([]*Item, error)
 	CountItems(ctx context.Context, filter *ItemFilter) (int64, error)

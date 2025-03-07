@@ -48,6 +48,8 @@
     "url": "Feed URL",
     "title": "Title",
     "description": "Description",
+    "tags": "Tags",
+    "tagsPlaceholder": "Add tags (press space to add)",
     "cron": "Update Schedule",
     "refresh": "Refresh",
     "deleteConfirm": "Are you sure you want to delete this feed?",

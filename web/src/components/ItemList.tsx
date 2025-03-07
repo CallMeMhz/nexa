@@ -13,7 +13,7 @@ interface Props {
   onRefresh: (feedID: string, unread: boolean, refresh: boolean) => void;
   isLoading: boolean;
   onDirectDelete?: (feedId: string) => void;
-  onUpdateFeed?: (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean) => void;
+  onUpdateFeed?: (feedId: string, url: string, cron: string, desc?: string, tags?: string[], suspended?: boolean) => void;
   feeds: Feed[];
   pagination: Pagination;
   onLoadMore: () => void;
@@ -77,9 +77,9 @@ const ItemList = ({
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateFeed = (feedId: string, url: string, cron: string, desc?: string, suspended?: boolean) => {
+  const handleUpdateFeed = (feedId: string, url: string, cron: string, desc?: string, tags?: string[], suspended?: boolean) => {
     if (onUpdateFeed) {
-      onUpdateFeed(feedId, url, cron, desc, suspended);
+      onUpdateFeed(feedId, url, cron, desc, tags, suspended);
     }
   };
 
